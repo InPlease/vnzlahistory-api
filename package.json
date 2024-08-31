@@ -1,25 +1,39 @@
 {
-  "name": "vnzlhistory-api",
-  "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "run:all": "node ./app/init.mjs",
-    "biome:check": "biome check .",
-    "biome:format": "biome format ."
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@libsql/client": "^0.10.0",
-    "@prisma/adapter-libsql": "^5.19.0",
-    "@prisma/client": "^5.19.0",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.8.3",
-    "prisma": "^5.19.0"
-  }
+	"name": "vnzlhistory-api",
+	"version": "1.0.0",
+	"main": "index.js",
+	"scripts": {
+		"run:all": "node ./app/init.mjs",
+		"biome:check": "biome check .",
+		"biome:format": "biome format .",
+		"prepare": "husky"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"dependencies": {
+		"@libsql/client": "^0.10.0",
+		"@prisma/adapter-libsql": "^5.19.0",
+		"@prisma/client": "^5.19.0",
+		"dotenv": "^16.4.5",
+		"express": "^4.19.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.8.3",
+		"husky": "^9.1.5",
+		"lint-staged": "^15.2.9",
+		"prisma": "^5.19.0"
+	},
+	"lint-staged": {
+		"*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [
+			"biome check --files-ignore-unknown=true",
+			"biome check --write --no-errors-on-unmatched",
+			"biome check --write --organize-imports-enabled=false --no-errors-on-unmatched",
+			"biome check --write --unsafe --no-errors-on-unmatched",
+			"biome format --write --no-errors-on-unmatched",
+			"biome lint --write --no-errors-on-unmatched"
+		],
+		"*": ["biome check --no-errors-on-unmatched --files-ignore-unknown=true"]
+	}
 }
