@@ -1,0 +1,32 @@
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = "file:./dev.db"
+}
+
+model Video {
+    id          Int        @id @default(autoincrement())
+    title       String     @unique
+    description String
+    tags        VideoTag[]
+    url         String
+}
+
+model Tag {
+    id     Int        @id @default(autoincrement())
+    name   String     @unique
+    videos VideoTag[]
+}
+
+model VideoTag {
+    videoId Int
+    tagId   Int
+    Video   Video @relation(fields: [videoId], references: [id])
+    Tag     Tag   @relation(fields: [tagId], references: [id])
+
+    @@id([videoId, tagId])
+}
