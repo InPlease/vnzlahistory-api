@@ -13,11 +13,14 @@
 	"license": "ISC",
 	"description": "",
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.637.0",
 		"@libsql/client": "^0.10.0",
 		"@prisma/adapter-libsql": "^5.19.0",
 		"@prisma/client": "^5.19.0",
+		"cors": "^2.8.5",
 		"dotenv": "^16.4.5",
-		"express": "^4.19.2"
+		"express": "^4.19.2",
+		"multer": "^1.4.5-lts.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.8.3",
