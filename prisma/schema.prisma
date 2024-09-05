@@ -13,7 +13,6 @@ model Video {
     title       String     @unique
     description String
     tags        VideoTag[]
-    url         String
 }
 
 model Tag {

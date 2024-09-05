@@ -1,13 +1,29 @@
+import fs from "node:fs";
 import multer from "multer";
-import { handlerUploadVideo } from "../../helpers/awsBucketHandler.mjs";
+import path from "node:path";
+import { uploadVideo } from "../../helpers/blackblazeIntegration.mjs";
+import { __dirname } from "../../helpers/ESModuleHandlers.mjs";
 
-const storage = multer.memoryStorage();
+const uploadDir = path.join(__dirname, "../uploads/");
+if (!fs.existsSync(uploadDir)) {
+	fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+	destination: (req, file, cb) => {
+		cb(null, uploadDir);
+	},
+	filename: (req, file, cb) => {
+		const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+		cb(null, uniqueSuffix + path.extname(file.originalname));
+	},
+});
+
 const upload = multer({ storage: storage });
-
 const main = ({ app, prisma }) => {
 	app.post("/create/tag", async (req, res) => {
 		try {
-			const { tag_name } = res;
+			const { tag_name } = req.body;
 
 			const newTag = await prisma.tag.create({
 				data: {
@@ -20,7 +36,7 @@ const main = ({ app, prisma }) => {
 				tag: newTag,
 			});
 		} catch (error) {
-			console.error("Error creating video:", error);
+			console.error("Error creating tag:", error);
 			res.status(500).send({
 				error: "tag.be.tag_error_created",
 			});
@@ -33,20 +49,18 @@ const main = ({ app, prisma }) => {
 			const videoFile = req.file;
 
 			if (!videoFile) {
-				return res.status(400).send("No video videoFile uploaded");
+				console.error("No video file uploaded or file handling failed.");
+				return res.status(400).json({ error: "No video file uploaded" });
 			}
 
 			const fileName = `${Date.now()}_${videoFile.originalname}`;
 
-			await handlerUploadVideo(fileName, videoFile.buffer); // Use buffer for in-memory storage
-
-			const s3Url = `https://${process.env.BUCKET_NAME}.s3.${process.env.BUCKET_REGION}.amazonaws.com/${fileName}`;
+			await uploadVideo(process.env.BUCKET_ID, fileName, videoFile.path);
 
 			const newVideo = await prisma.video.create({
 				data: {
 					title,
 					description,
-					url: s3Url,
 					tags: {
 						create: JSON.parse(tags).map((tagName) => ({
 							Tag: {
@@ -60,10 +74,24 @@ const main = ({ app, prisma }) => {
 				},
 			});
 
-			res.json(newVideo);
+			res.status(201).json({
+				message: "Video was uploaded well, enjoy!",
+				status: 200,
+				videoInfo: newVideo,
+			});
 		} catch (error) {
-			console.error("Error creating video:", error);
-			res.status(500).send("Error creating video");
+			return res.status(500).json({
+				error: "An unexpected error occurred while creating the video",
+				errorCode: error.code,
+			});
+		} finally {
+			if (req.file?.path) {
+				try {
+					await fs.promises.unlink(req.file.path);
+				} catch (err) {
+					console.error("Error deleting temp file:", err);
+				}
+			}
 		}
 	});
 };
