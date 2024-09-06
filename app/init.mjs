@@ -16,6 +16,8 @@ import { rateLimitFunction } from "./helpers/rateLimiters.mjs";
 // Routes
 import MainGet from "./api/_get/main.mjs";
 import MainPost from "./api/_post/main.mjs";
+import MainDelete from "./api/_delete/_delete.mjs";
+import MainPut from "./api/_put/_put.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,6 +70,8 @@ app.get(
 
 MainGet(params);
 MainPost(params);
+MainDelete(params);
+MainPut(params);
 
 app.listen(port, () => {
 	console.log(`Example app listening on port ${port}`);

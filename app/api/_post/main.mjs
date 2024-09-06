@@ -8,7 +8,6 @@ const uploadDir = path.join(__dirname, "../uploads/");
 if (!fs.existsSync(uploadDir)) {
 	fs.mkdirSync(uploadDir, { recursive: true });
 }
-
 const storage = multer.diskStorage({
 	destination: (req, file, cb) => {
 		cb(null, uploadDir);
@@ -18,8 +17,8 @@ const storage = multer.diskStorage({
 		cb(null, uniqueSuffix + path.extname(file.originalname));
 	},
 });
-
 const upload = multer({ storage: storage });
+
 const main = ({ app, prisma }) => {
 	app.post("/create/tag", async (req, res) => {
 		try {
@@ -32,13 +31,14 @@ const main = ({ app, prisma }) => {
 			});
 
 			res.json({
-				message: "tag.be.tag_created",
+				message: "Tag was created",
 				tag: newTag,
+				status: 200,
 			});
 		} catch (error) {
-			console.error("Error creating tag:", error);
 			res.status(500).send({
-				error: "tag.be.tag_error_created",
+				error: "An unexpected error occurred while creating the video",
+				errorCode: error.code,
 			});
 		}
 	});
