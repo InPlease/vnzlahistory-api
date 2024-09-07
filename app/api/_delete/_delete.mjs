@@ -1,3 +1,6 @@
+// Helpers
+import { deleteAllFileVersions } from "../../helpers/blackblaze.mjs";
+
 const main = ({ app, prisma }) => {
 	app.delete("/tag/delete", async (req, res) => {
 		try {
@@ -14,6 +17,23 @@ const main = ({ app, prisma }) => {
 				status: 200,
 			});
 		} catch (error) {
+			res.status(500).send({
+				error: "An unexpected error occurred while deleting the tag",
+				errorCode: error.code,
+			});
+		}
+	});
+
+	app.delete("/video/delete", async (req, res) => {
+		try {
+			const { file_name } = res;
+
+			await deleteAllFileVersions(process.env.BUCKET_ID, file_name);
+			res.json({
+				message: "Video was deleted.",
+				status: 200,
+			});
+		} catch (err) {
 			res.status(500).send({
 				error: "An unexpected error occurred while deleting the tag",
 				errorCode: error.code,

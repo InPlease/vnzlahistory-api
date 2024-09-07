@@ -3,3 +3,6 @@ node_modules
 
 # Enviroment
 .env
+
+# Locks
+package-lock.json

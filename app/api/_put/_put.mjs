@@ -1,7 +1,8 @@
+// Helpers
 import { cleanedPayload } from "../../helpers/generics.mjs";
 
-const main = ({ app, prisma }) => {
-	app.put("/tag/edit", async (req, res) => {
+const main = ({ app, prisma, prefix }) => {
+	app.put(`${prefix}/tag/edit`, async (req, res) => {
 		try {
 			const { id, new_name } = req.body;
 
@@ -51,17 +52,16 @@ const main = ({ app, prisma }) => {
 		}
 	});
 
-	app.put("/video/edit", async (req, res) => {
+	app.put(`${prefix}/video/edit`, async (req, res) => {
 		try {
-			/**
-			 * 1. Frontend will require at minimum the title, description, and tag.
-			 *    We should never receive something different.
-			 */
-			const { id, title, description, tags } = req.body;
+			const { id, ui_title, description, tags } = req.body;
 
 			const video_exist = await prisma.video.findUnique({
 				where: {
 					id,
+				},
+				include: {
+					tags: true,
 				},
 			});
 
@@ -72,61 +72,55 @@ const main = ({ app, prisma }) => {
 				});
 			}
 
-			if (!title && !description && !tags) {
+			if (!ui_title && !description && !tags) {
 				return res.status(400).json({
 					error:
-						"At least one field must have data (title, description, or tags).",
+						"At least one field must have data (ui_title, description, or tags).",
 					errorCode: 400,
 				});
 			}
 
-			let parsedTags = [];
+			const payload = { description, ui_title };
+			const filtered_payload = cleanedPayload(payload);
 
-			if (tags) {
-				try {
-					parsedTags = JSON.parse(tags);
-					if (!Array.isArray(parsedTags)) {
-						throw new Error("Tags should be an array.");
-					}
-				} catch (err) {
-					return res.status(400).json({
-						error: `Invalid tags format. Expected JSON array. ${err.message}`,
-						errorCode: 400,
-					});
-				}
+			if (tags && Array.isArray(tags)) {
+				await prisma.video.update({
+					where: { id },
+					data: {
+						tags: {
+							deleteMany: {},
+						},
+					},
+				});
+
+				await prisma.video.update({
+					where: { id },
+					data: {
+						tags: {
+							create: tags.map((tagId) => ({
+								tag: {
+									connect: { id: tagId },
+								},
+							})),
+						},
+					},
+				});
 			}
 
-			const payload = {
-				title,
-				description,
-				tags: parsedTags,
-			};
-
-			const filtered_payload = Object.entries(payload).reduce(
-				(acc, [key, value]) => {
-					if (value !== undefined && value !== "") {
-						acc[key] = value;
-					}
-					return acc;
-				},
-				{},
-			);
-
-			await prisma.video.update({
-				where: {
-					id,
-				},
-				data: {
-					...filtered_payload,
-				},
-			});
+			if (Object.keys(filtered_payload).length > 0) {
+				await prisma.video.update({
+					where: { id },
+					data: {
+						...filtered_payload,
+					},
+				});
+			}
 
 			return res.json({
 				message: "The video was successfully edited.",
 				status: 200,
 			});
 		} catch (error) {
-			console.error("Error editing video:", error);
 			res.status(500).send({
 				error: "An unexpected error occurred while editing the video.",
 				errorCode: error.code || error.message,

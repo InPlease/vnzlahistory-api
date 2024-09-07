@@ -1,7 +1,8 @@
-import { GetBucketFiles } from "../../helpers/blackblazeIntegration.mjs";
+// Helpers
+import { GetBucketFiles } from "../../helpers/blackblaze.mjs";
 
-const main = ({ app, prisma }) => {
-	app.get("/tag/list", async (req, res) => {
+const main = ({ app, prisma, prefix }) => {
+	app.get(`${prefix}/tag/list`, async (req, res) => {
 		try {
 			const tagList = await prisma.tag.findMany();
 
@@ -17,15 +18,32 @@ const main = ({ app, prisma }) => {
 		}
 	});
 
-	app.get("/videos/list", async (req, res) => {
+	app.get(`${prefix}/videos/list`, async (req, res) => {
 		try {
-			const videoUrls = await GetBucketFiles();
-			res.json({
-				videos: videoUrls,
-				status: 200,
+			const page = Number.parseInt(req.query.page) || 1;
+			const limit = Number.parseInt(req.query.limit) || 20;
+
+			const skip = (page - 1) * limit;
+
+			const totalVideos = await prisma.video.count();
+
+			const video_list = await prisma.video.findMany({
+				skip: skip,
+				take: limit,
+			});
+
+			const totalPages = Math.ceil(totalVideos / limit);
+
+			res.status(200).json({
+				videos: video_list,
+				pagination: {
+					currentPage: page,
+					totalPages: totalPages,
+					totalVideos: totalVideos,
+					limit: limit,
+				},
 			});
 		} catch (error) {
-			console.error("Error in /videos/list:", error);
 			res.status(500).send({
 				error: "An unexpected error occurred while fetching the video list",
 				errorCode: error.code,

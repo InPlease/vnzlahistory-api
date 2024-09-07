@@ -11,7 +11,8 @@ datasource db {
 // Videos
 model Video {
     id                               Int                 @id @default(autoincrement())
-    title                            String              @unique
+    bucket_file_name                 String              @unique
+    ui_title                         String?
     url                              String              @unique
     description                      String
     createdAt                        DateTime            @default(now())

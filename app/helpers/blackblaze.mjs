@@ -1,3 +1,4 @@
+// Dependencies
 import B2 from "backblaze-b2";
 import { promises as fs } from "node:fs";
 
@@ -58,6 +59,11 @@ export async function authenticate() {
 	}
 }
 
+/**
+ * @param {string} bucketId
+ * @param {string} videoName
+ * @param {string} videoPath
+ */
 export async function uploadVideo(bucketId, videoName, videoPath) {
 	try {
 		await b2.authorize();
@@ -76,5 +82,56 @@ export async function uploadVideo(bucketId, videoName, videoPath) {
 		console.log("Video uploaded successfully:", uploadResponse.data);
 	} catch (err) {
 		console.error("Error uploading video:", err.message, err.stack);
+	}
+}
+
+/**
+ * @why Right now in the B2 documentation we don't have a quick way to delete
+ * a file with all its versins, we are force to make it using loops
+ * @param {string} bucketId
+ * @param {string} fileName
+ */
+export async function deleteAllFileVersions(bucketId, fileName) {
+	try {
+		await b2.authorize();
+
+		let fileVersions = [];
+		let nextFileName = null;
+		let nextFileId = null;
+
+		do {
+			const response = await b2.listFileVersions({
+				bucketId: bucketId,
+				startFileName: nextFileName,
+				startFileId: nextFileId,
+				maxFileCount: 100,
+			});
+
+			const {
+				files,
+				nextFileName: nextFile,
+				nextFileId: nextId,
+			} = response.data;
+			fileVersions = [...fileVersions, ...files];
+			nextFileName = nextFile;
+			nextFileId = nextId;
+		} while (nextFileName && nextFileId);
+
+		for (const file of fileVersions) {
+			if (file.fileName === fileName) {
+				await b2.deleteFileVersion({
+					fileId: file.fileId,
+					fileName: file.fileName,
+				});
+			}
+		}
+
+		console.log(`All versions of file '${fileName}' deleted successfully.`);
+	} catch (err) {
+		console.error(
+			`Error deleting versions of file '${fileName}':`,
+			err.message,
+		);
+		throw err;
 	}
 }
