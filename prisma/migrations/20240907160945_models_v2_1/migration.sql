@@ -1,7 +1,8 @@
 -- CreateTable
 CREATE TABLE "Video" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "title" TEXT NOT NULL,
+    "bucket_file_name" TEXT NOT NULL,
+    "ui_title" TEXT,
     "url" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -52,7 +53,7 @@ CREATE TABLE "Report" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Video_title_key" ON "Video"("title");
+CREATE UNIQUE INDEX "Video_bucket_file_name_key" ON "Video"("bucket_file_name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Video_url_key" ON "Video"("url");

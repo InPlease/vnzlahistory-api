@@ -1,7 +1,8 @@
-import { GetBucketFiles } from "../../helpers/blackblazeIntegration.mjs";
+// Helpers
+import { GetBucketFiles } from "../../helpers/blackblaze.mjs";
 
-const main = ({ app, prisma }) => {
-	app.get("/tag/list", async (req, res) => {
+const main = ({ app, prisma, prefix }) => {
+	app.get(`${prefix}/tag/list`, async (req, res) => {
 		try {
 			const tagList = await prisma.tag.findMany();
 
@@ -17,7 +18,7 @@ const main = ({ app, prisma }) => {
 		}
 	});
 
-	app.get("/videos/list", async (req, res) => {
+	app.get(`${prefix}/videos/list`, async (req, res) => {
 		try {
 			const videoUrls = await GetBucketFiles();
 			res.json({

@@ -1,4 +1,4 @@
-const rateLimitTime = 5 * 60 * 1000; // 5 minutes
+const rateLimitTime = 5 * 60 * 1000;
 
 export const rateLimitFunction = (rate) => {
 	const generalLimiter = rate({
@@ -20,19 +20,16 @@ export const rateLimitFunction = (rate) => {
 		windowMs: rateLimitTime,
 		limit: 5,
 		standardHeaders: "draft-7",
-		legacyHeaders: false,
-	});
-
-	const newsLimiter = rate({
-		windowMs: rateLimitTime,
-		limit: 200,
-		standardHeaders: "draft-7",
+		message: {
+			status: 429,
+			error:
+				"You have exceeded the download limit. Now you have to wait 5 minutes",
+		},
 		legacyHeaders: false,
 	});
 
 	return {
 		generalLimiter,
 		downloadLimiter,
-		newsLimiter,
 	};
 };

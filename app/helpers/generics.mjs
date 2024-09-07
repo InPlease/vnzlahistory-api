@@ -5,3 +5,7 @@ export const cleanedPayload = (payload) =>
 		}
 		return acc;
 	}, {});
+
+export const __dirname = import.meta.dirname;
+
+export const cacheTime = "5 minutes";
