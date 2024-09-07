@@ -1,22 +1,37 @@
+import { GetBucketFiles } from "../../helpers/blackblazeIntegration.mjs";
+
 const main = ({ app, prisma }) => {
-  app.post("/create-video", async (req, res) => {
-    // try {
-    //   const { title, description, tags, url } = req.body;
+	app.get("/tag/list", async (req, res) => {
+		try {
+			const tagList = await prisma.tag.findMany();
 
-    //   const newVideo = await prisma.video.create({
-    //     data: {
-    //       title,
-    //       description,
-    //       url,
-    //     }
-    //   });
+			res.json({
+				tagList: tagList,
+				status: 200,
+			});
+		} catch (error) {
+			res.status(500).send({
+				error: "An unexpected error occurred while creating the video",
+				errorCode: error.code,
+			});
+		}
+	});
 
-    //   res.json(newVideo);
-    // } catch (error) {
-    //   console.error("Error creating video:", error);
-    //   res.status(500).send("Error creating video");
-    // }
-  });
+	app.get("/videos/list", async (req, res) => {
+		try {
+			const videoUrls = await GetBucketFiles();
+			res.json({
+				videos: videoUrls,
+				status: 200,
+			});
+		} catch (error) {
+			console.error("Error in /videos/list:", error);
+			res.status(500).send({
+				error: "An unexpected error occurred while fetching the video list",
+				errorCode: error.code,
+			});
+		}
+	});
 };
 
 export default main;
