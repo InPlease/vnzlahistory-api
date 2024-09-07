@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"main": "index.js",
 	"scripts": {
-		"run:all": "node ./app/init.mjs",
+		"run:all": "dotenv -e .env node ./app/init.mjs",
 		"biome:check": "biome check .",
 		"biome:format": "biome format .",
 		"prepare": "husky"
@@ -20,13 +20,13 @@
 		"apicache": "^1.6.3",
 		"backblaze-b2": "^1.7.0",
 		"cors": "^2.8.5",
-		"dotenv": "^16.4.5",
 		"express": "^4.19.2",
 		"express-rate-limit": "^7.4.0",
 		"multer": "^1.4.5-lts.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.8.3",
+		"dotenv-cli": "^7.4.2",
 		"husky": "^9.1.5",
 		"lint-staged": "^15.2.9",
 		"prisma": "^5.19.0"
