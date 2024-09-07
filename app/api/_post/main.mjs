@@ -45,25 +45,43 @@ const main = ({ app, prisma }) => {
 
 	app.post("/create-video", upload.single("videoFile"), async (req, res) => {
 		try {
-			const { title, description, tags } = req.body;
+			const { title, description, video_tags } = req.body;
 			const videoFile = req.file;
 
 			if (!videoFile) {
-				console.error("No video file uploaded or file handling failed.");
-				return res.status(400).json({ error: "No video file uploaded" });
+				return res
+					.status(400)
+					.json({ error: "No video file uploaded", is_video_received: false });
 			}
 
-			const fileName = `${Date.now()}_${videoFile.originalname}`;
+			const alreadyExistVideo = await prisma.video.findUnique({
+				where: {
+					title,
+				},
+			});
+
+			if (alreadyExistVideo) {
+				return res.status(409).json({
+					error: "A video with this title already exists",
+					already_exist: true,
+				});
+			}
+
+			const urlFile = `${encodeURIComponent(title)}.${videoFile.filename.split(".")[1]}`;
+			const fileName = `${title}.${videoFile.filename.split(".")[1]}`;
 
 			await uploadVideo(process.env.BUCKET_ID, fileName, videoFile.path);
+
+			const fileUrl = `${process.env.BLACK_BASE_URL}/${process.env.BUCKET_NAME}/${urlFile}`;
 
 			const newVideo = await prisma.video.create({
 				data: {
 					title,
+					url: fileUrl,
 					description,
 					tags: {
-						create: JSON.parse(tags).map((tagName) => ({
-							Tag: {
+						create: JSON.parse(video_tags).map((tagName) => ({
+							tag: {
 								connectOrCreate: {
 									where: { name: tagName },
 									create: { name: tagName },
@@ -71,18 +89,22 @@ const main = ({ app, prisma }) => {
 							},
 						})),
 					},
+					createdAt: new Date(),
+					is_verified: false,
+					is_reported: false,
 				},
 			});
 
 			res.status(201).json({
-				message: "Video was uploaded well, enjoy!",
-				status: 200,
+				message: "Video was uploaded successfully, enjoy!",
+				status: 201,
 				videoInfo: newVideo,
+				is_video_received: true,
 			});
 		} catch (error) {
 			return res.status(500).json({
 				error: "An unexpected error occurred while creating the video",
-				errorCode: error.code,
+				errorCode: error.code || error.message,
 			});
 		} finally {
 			if (req.file?.path) {

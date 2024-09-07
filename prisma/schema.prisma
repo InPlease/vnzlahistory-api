@@ -8,11 +8,20 @@ datasource db {
     url      = "file:./dev.db"
 }
 
+// Videos
 model Video {
-    id          Int        @id @default(autoincrement())
-    title       String     @unique
-    description String
-    tags        VideoTag[]
+    id                               Int                 @id @default(autoincrement())
+    title                            String              @unique
+    url                              String              @unique
+    description                      String
+    createdAt                        DateTime            @default(now())
+    updatedAt                        DateTime            @updatedAt
+    is_verified                      Boolean
+    is_reported                      Boolean
+    report_type                      String?
+    report_team_comments             String?
+    community_clarification_response CommunityComments[]
+    tags                             VideoTag[]
 }
 
 model Tag {
@@ -22,10 +31,33 @@ model Tag {
 }
 
 model VideoTag {
+    video   Video @relation(fields: [videoId], references: [id])
     videoId Int
+    tag     Tag   @relation(fields: [tagId], references: [id])
     tagId   Int
-    Video   Video @relation(fields: [videoId], references: [id])
-    Tag     Tag   @relation(fields: [tagId], references: [id])
 
     @@id([videoId, tagId])
+}
+
+// Community
+model CommunityComments {
+    id       Int    @id @default(autoincrement())
+    comment  String
+    video_id Int
+    Video    Video  @relation(fields: [video_id], references: [id])
+}
+
+// Limits
+model Limits {
+    id                 Int @id @default(autoincrement())
+    maxUploadedPerDay  Int
+    totalUploadedToday Int
+}
+
+// Reports
+model Report {
+    id         Int    @id @default(autoincrement())
+    name       String @unique
+    severity   Int
+    reportType String
 }

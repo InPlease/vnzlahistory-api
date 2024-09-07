@@ -18,6 +18,37 @@ export async function GetBucket() {
 	}
 }
 
+export async function GetBucketFiles() {
+	let videoFiles = [];
+	let nextFileName = null;
+
+	try {
+		await b2.authorize();
+
+		do {
+			const response = await b2.listFileNames({
+				bucketId: process.env.BUCKET_ID,
+				startFileName: nextFileName,
+				maxFileCount: 20,
+			});
+
+			const files = response.data.files.map((file) => ({
+				fileName: file.fileName,
+				url: `${process.env.BLACK_BASE_URL}/${process.env.BUCKET_NAME}/${encodeURIComponent(file.fileName)}`,
+			}));
+
+			videoFiles = [...videoFiles, ...files];
+
+			nextFileName = response.data.nextFileName;
+		} while (nextFileName);
+
+		return videoFiles;
+	} catch (err) {
+		console.error("Error fetching video URLs:", err);
+		throw err;
+	}
+}
+
 export async function authenticate() {
 	try {
 		await b2.authorize();
