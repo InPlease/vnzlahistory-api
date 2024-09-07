@@ -1,8 +1,8 @@
 // Helpers
 import { deleteAllFileVersions } from "../../helpers/blackblaze.mjs";
 
-const main = ({ app, prisma }) => {
-	app.delete("/tag/delete", async (req, res) => {
+const main = ({ app, prisma, prefix }) => {
+	app.delete(`${prefix}/tag/delete`, async (req, res) => {
 		try {
 			const { tag_name } = req.body;
 
@@ -24,7 +24,7 @@ const main = ({ app, prisma }) => {
 		}
 	});
 
-	app.delete("/video/delete", async (req, res) => {
+	app.delete(`${prefix}/video/delete`, async (req, res) => {
 		try {
 			const { file_name } = res;
 
