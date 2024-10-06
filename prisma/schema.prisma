@@ -25,6 +25,46 @@ model Video {
     tags                             VideoTag[]
 }
 
+model RateLimit {
+    id                  Int      @id @default(autoincrement())
+    source              String
+    maxRequestsPerDay   Int
+    totalRequests       Int      @default(0)
+    totalHourlyRequests Int      @default(0)
+    lastReset           DateTime @default(now())
+}
+
+model requestLog {
+    id        Int      @id @default(autoincrement())
+    source    String
+    createdAt DateTime @default(now())
+}
+
+model NewsSource {
+    id        Int      @id @default(autoincrement())
+    source    String   @unique
+    news      News[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model News {
+    id           Int        @id @default(autoincrement())
+    title        String
+    content      String
+    author       String?
+    url          String     @unique
+    image        String?
+    category     String?
+    language     String?
+    country      String?
+    publishedAt  DateTime   @map("published_at")
+    source       NewsSource @relation(fields: [newsSourceId], references: [id])
+    newsSourceId Int
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
+}
+
 model Tag {
     id     Int        @id @default(autoincrement())
     name   String     @unique
@@ -46,13 +86,6 @@ model CommunityComments {
     comment  String
     video_id Int
     Video    Video  @relation(fields: [video_id], references: [id])
-}
-
-// Limits
-model Limits {
-    id                 Int @id @default(autoincrement())
-    maxUploadedPerDay  Int
-    totalUploadedToday Int
 }
 
 // Reports

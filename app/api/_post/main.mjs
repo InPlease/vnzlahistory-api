@@ -135,65 +135,25 @@ const main = ({ app, prisma, prefix }) => {
 		},
 	);
 
-	app.post(`${prefix}/news/add`, async (req, res) => {
-		const { newsArray } = req.body;
+	app.post(`${prefix}/create/rate-limit`, async (req, res) => {
+		const { source, maxRequestsPerDay } = req.body;
 
 		try {
-			const now = new Date();
-			const oneAndHalfHoursAgo = new Date(
-				now.getTime() - NEWS_REQUEST_INTERVAL_HOURS,
-			);
-
-			const lastRequest = await prisma.requestLog.findFirst({
-				orderBy: {
-					requestTime: "desc",
-				},
-			});
-
-			if (lastRequest && lastRequest.requestTime >= oneAndHalfHoursAgo) {
-				return res.status(429).json({
-					message: "you cannot make a new request yet, please try again later.",
-				});
-			}
-
-			const newsData = newsArray.map((newsItem) => ({
-				title: newsItem.title,
-				description: newsItem.description,
-				url: newsItem.url,
-				source: newsItem.source,
-				image: newsItem.image,
-				publishedAt: new Date(newsItem.publishedAt),
-			}));
-
-			await prisma.news.createMany({
-				data: newsData,
-			});
-
-			await prisma.requestLog.create({
+			await prisma.rateLimit.create({
 				data: {
-					requestTime: now,
+					source: source,
+					maxRequestsPerDay: maxRequestsPerDay,
+					totalRequests: 0,
+					totalHourlyRequests: 0,
+					lastReset: new Date(),
 				},
 			});
-
-			return res.status(201).json({ message: "news saved successfully." });
+			res.status(201).json({ message: "Rate limit created successfully." });
 		} catch (error) {
-			return res
-				.status(500)
-				.json({ message: "An unexpected error occurred while add news." });
+			console.error(error);
+			res.status(500).json({ error: "Failed to create rate limit." });
 		}
 	});
-
-	async function cleanupOldNews() {
-		const oneDayAgo = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
-
-		await prisma.news.deleteMany({
-			where: {
-				createdAt: {
-					lt: oneDayAgo,
-				},
-			},
-		});
-	}
 };
 
 export default main;
