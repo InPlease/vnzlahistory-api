@@ -9,3 +9,5 @@ export const cleanedPayload = (payload) =>
 export const __dirname = import.meta.dirname;
 
 export const cacheTime = "5 minutes";
+
+export const NEWS_REQUEST_INTERVAL_HOURS = 1.6 * 60 * 60 * 1000; // 1.6 horas

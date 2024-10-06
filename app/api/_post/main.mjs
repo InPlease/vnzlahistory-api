@@ -5,7 +5,10 @@ import path from "node:path";
 
 // Helpers
 import { uploadVideo } from "../../helpers/blackblaze.mjs";
-import { __dirname } from "../../helpers/generics.mjs";
+import {
+	__dirname,
+	NEWS_REQUEST_INTERVAL_HOURS,
+} from "../../helpers/generics.mjs";
 
 const uploadDir = path.join(__dirname, "../uploads/");
 
@@ -131,6 +134,66 @@ const main = ({ app, prisma, prefix }) => {
 			}
 		},
 	);
+
+	app.post(`${prefix}/news/add`, async (req, res) => {
+		const { newsArray } = req.body;
+
+		try {
+			const now = new Date();
+			const oneAndHalfHoursAgo = new Date(
+				now.getTime() - NEWS_REQUEST_INTERVAL_HOURS,
+			);
+
+			const lastRequest = await prisma.requestLog.findFirst({
+				orderBy: {
+					requestTime: "desc",
+				},
+			});
+
+			if (lastRequest && lastRequest.requestTime >= oneAndHalfHoursAgo) {
+				return res.status(429).json({
+					message: "you cannot make a new request yet, please try again later.",
+				});
+			}
+
+			const newsData = newsArray.map((newsItem) => ({
+				title: newsItem.title,
+				description: newsItem.description,
+				url: newsItem.url,
+				source: newsItem.source,
+				image: newsItem.image,
+				publishedAt: new Date(newsItem.publishedAt),
+			}));
+
+			await prisma.news.createMany({
+				data: newsData,
+			});
+
+			await prisma.requestLog.create({
+				data: {
+					requestTime: now,
+				},
+			});
+
+			return res.status(201).json({ message: "news saved successfully." });
+		} catch (error) {
+			return res
+				.status(500)
+				.json({ message: "An unexpected error occurred while add news." });
+		}
+	});
+
+	async function cleanupOldNews() {
+		const oneDayAgo = new Date(new Date().getTime() - 24 * 60 * 60 * 1000);
+
+		await prisma.news.deleteMany({
+			where: {
+				createdAt: {
+					lt: oneDayAgo,
+				},
+			},
+		});
+	}
 };
 
 export default main;
