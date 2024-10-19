@@ -8,7 +8,7 @@ import { uploadVideo } from "../../helpers/blackblaze.mjs";
 import {
 	__dirname,
 	NEWS_REQUEST_INTERVAL_HOURS,
-} from "../../helpers/generics.mjs";
+} from "../../helpers/globals.mjs";
 
 const uploadDir = path.join(__dirname, "../uploads/");
 

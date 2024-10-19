@@ -1,5 +1,5 @@
 // Helpers
-import { cleanedPayload } from "../../helpers/generics.mjs";
+import { cleanedPayload } from "../../helpers/globals.mjs";
 
 const main = ({ app, prisma, prefix }) => {
 	app.put(`${prefix}/tag/edit`, async (req, res) => {

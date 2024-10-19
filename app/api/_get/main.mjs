@@ -1,5 +1,9 @@
 // Utils
-import { canMakeRequest } from "../../helpers/generics.mjs";
+import {
+	canMakeRequest,
+	centralizeNewsProperties,
+	newsUrls,
+} from "../../helpers/globals.mjs";
 
 const main = ({ app, prisma, prefix }) => {
 	app.get(`${prefix}/tag/list`, async (req, res) => {
@@ -78,18 +82,21 @@ const main = ({ app, prisma, prefix }) => {
 			: [];
 
 		if (!canRequest) {
-			return res.status(429).json({
-				error: `Request limit reached for source: ${source}`,
-				data: existingNews,
+			return res.status(200).json({
+				message: `Request limit reached for source: ${source}`,
+				data: existingNews.map((news) =>
+					centralizeNewsProperties(news, news.newsSourceId, source),
+				),
 			});
 		}
 
-		const apiUrl = `${process.env.MEDIA_STACK_BASE_URL}?access_key=${process.env.MEDIA_STACK_API}&countries=ve`;
+		const apiConfig = newsUrls[source];
 
 		try {
-			const response = await fetch(apiUrl);
+			const response = await fetch(apiConfig);
 			const data = await response.json();
-			const articles = data.data;
+
+			const articles = data[apiConfig.get_data];
 			let savedNewsSource;
 
 			if (!existingSource) {
@@ -113,25 +120,43 @@ const main = ({ app, prisma, prefix }) => {
 
 			const newsData = articles
 				.filter((article) => !existingUrls.has(article.url))
-				.map((article) => ({
-					title: article.title,
-					content: article.description,
-					author: article.author || "source.unknown",
-					url: article.url,
-					image: article.image || null,
-					category: article.category || "General",
-					language: article.language || "en",
-					country: article.country || "us",
-					publishedAt: new Date(article.published_at),
-					newsSourceId: savedNewsSource.id,
-				}));
+				.map((article) =>
+					centralizeNewsProperties(article, savedNewsSource.id, source),
+				);
+
+			for (const newsItem of newsData) {
+				try {
+					await prisma.news.create({
+						data: {
+							title: newsItem.title,
+							content: newsItem.content,
+							author: newsItem.author,
+							url: newsItem.url,
+							image: newsItem.image,
+							category: newsItem.category,
+							language: newsItem.language,
+							country: newsItem.country,
+							publishedAt: newsItem.publishedAt,
+							newsSourceId: newsItem.newsSourceId,
+						},
+					});
+				} catch (error) {
+					if (error.code === "P2002") {
+						console.warn(
+							`News with URL ${newsItem.url} already exists, skipping...`,
+						);
+					} else {
+						console.error("Error saving news:", error);
+					}
+				}
+			}
 
 			return res.status(200).json({
 				message: "News obtained and saved successfully.",
 				data: existingNews.concat(newsData),
 			});
 		} catch (error) {
-			console.error("Error fetching data:", error);
+			console.error(error);
 			return res.status(500).json({ error: "Error retrieving news." });
 		}
 	});
