@@ -5,10 +5,7 @@ import path from "node:path";
 
 // Helpers
 import { uploadVideo } from "../../helpers/blackblaze.mjs";
-import {
-	__dirname,
-	NEWS_REQUEST_INTERVAL_HOURS,
-} from "../../helpers/globals.mjs";
+import { __dirname } from "../../helpers/globals.mjs";
 
 const uploadDir = path.join(__dirname, "../uploads/");
 
