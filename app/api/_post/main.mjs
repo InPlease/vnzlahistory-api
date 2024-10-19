@@ -82,9 +82,20 @@ const main = ({ app, prisma, prefix }) => {
 				const urlFile = `${encodeURIComponent(bucket_file_name)}.${videoFile.filename.split(".")[1]}`;
 				const fileName = `${bucket_file_name}.${videoFile.filename.split(".")[1]}`;
 
-				await uploadVideo(process.env.BUCKET_ID, fileName, videoFile.path);
+				const uploadVideoToBucket = await uploadVideo(
+					process.env.BUCKET_ID,
+					fileName,
+					videoFile.path,
+				);
 
-				const fileUrl = `${process.env.BLACK_BASE_URL}/${process.env.BUCKET_NAME}/${urlFile}`;
+				if (uploadVideoToBucket?.status !== 201) {
+					return res.status(uploadVideoToBucket.status).json({
+						error: uploadVideoToBucket.error_message,
+						status: uploadVideoToBucket.status,
+					});
+				}
+
+				const fileUrl = `${process.env.BLACKBLAZE_BASE_URL}/${process.env.BUCKET_NAME}/${urlFile}`;
 
 				const newVideo = await prisma.video.create({
 					data: {
@@ -150,8 +161,10 @@ const main = ({ app, prisma, prefix }) => {
 			});
 			res.status(201).json({ message: "Rate limit created successfully." });
 		} catch (error) {
-			console.error(error);
-			res.status(500).json({ error: "Failed to create rate limit." });
+			res.status(500).json({
+				error:
+					"Failed to create rate limit, possible wrong property type on property.",
+			});
 		}
 	});
 };

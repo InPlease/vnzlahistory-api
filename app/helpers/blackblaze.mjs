@@ -3,8 +3,8 @@ import B2 from "backblaze-b2";
 import { promises as fs } from "node:fs";
 
 export const b2 = new B2({
-	applicationKeyId: process.env.APP_KEY_ID,
-	applicationKey: process.env.APP_KEY,
+	applicationKeyId: process.env.APPLICATION_KEY_ID,
+	applicationKey: process.env.APPLICATION_KEY,
 });
 
 export async function GetBucket() {
@@ -78,10 +78,15 @@ export async function uploadVideo(bucketId, videoName, videoPath) {
 			fileName: videoName,
 			data: videoBuffer,
 		});
-
-		console.log("Video uploaded successfully:", uploadResponse.data);
+		return {
+			message: "Video uploaded successfully",
+			status: 201,
+		};
 	} catch (err) {
-		console.error("Error uploading video:", err.message, err.stack);
+		return {
+			error_message: err.message,
+			status: err.response.status,
+		};
 	}
 }
 

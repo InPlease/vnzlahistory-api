@@ -14,7 +14,6 @@ const main = ({ app, prisma, prefix }) => {
 				status: 200,
 			});
 		} catch (error) {
-			console.log(error);
 			res.status(500).send({
 				error: "An unexpected error occurred while getting video",
 				errorCode: error.code,
@@ -62,6 +61,7 @@ const main = ({ app, prisma, prefix }) => {
 	 */
 	app.get(`${prefix}/news`, async (req, res) => {
 		const source = req.query.source;
+		const limit = req.query.limit || 30;
 
 		if (!source) {
 			return res.status(400).json({
@@ -84,19 +84,22 @@ const main = ({ app, prisma, prefix }) => {
 		if (!canRequest) {
 			return res.status(200).json({
 				message: `Request limit reached for source: ${source}`,
-				data: existingNews.map((news) =>
-					centralizeNewsProperties(news, news.newsSourceId, source),
-				),
+				data: existingNews
+					.map((news) =>
+						centralizeNewsProperties(news, news.newsSourceId, source),
+					)
+					.slice(0, 10)
+					.reverse(),
 			});
 		}
 
 		const apiConfig = newsUrls[source];
 
 		try {
-			const response = await fetch(apiConfig);
+			const response = await fetch(apiConfig.url);
 			const data = await response.json();
 
-			const articles = data[apiConfig.get_data];
+			const articles = data[apiConfig.data_key];
 			let savedNewsSource;
 
 			if (!existingSource) {
@@ -153,7 +156,7 @@ const main = ({ app, prisma, prefix }) => {
 
 			return res.status(200).json({
 				message: "News obtained and saved successfully.",
-				data: existingNews.concat(newsData),
+				data: existingNews.concat(newsData).slice(0, 10).reverse(),
 			});
 		} catch (error) {
 			console.error(error);

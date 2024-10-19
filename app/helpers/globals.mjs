@@ -6,8 +6,14 @@ export const cacheTime = "5 minutes";
 export const NEWS_REQUEST_INTERVAL_HOURS = 1.6 * 60 * 60 * 1000;
 
 export const newsUrls = {
-	newsdata: `${process.env.NEWS_DATA_BASE_URL}?apikey=${process.env.NEWS_DATA_API_KEY}&language=es&country=ve`,
-	mediastack: `${process.env.MEDIA_STACK_BASE_URL}?access_key=${process.env.MEDIA_STACK_API}&countries=ve`,
+	newsdata: {
+		url: `${process.env.NEWS_DATA_BASE_URL}?apikey=${process.env.NEWS_DATA_API_KEY}&language=es&country=ve`,
+		data_key: "results",
+	},
+	mediastack: {
+		url: `${process.env.MEDIA_STACK_BASE_URL}?access_key=${process.env.MEDIA_STACK_API}&countries=ve`,
+		data_key: "news_items",
+	},
 };
 
 // Methods
@@ -23,7 +29,7 @@ export async function canMakeRequest(source, prisma) {
 	const rateLimit = await prisma.rateLimit.findFirst({
 		where: { source: source },
 	});
-	console.log(rateLimit, "ratelimit");
+
 	if (!rateLimit) {
 		throw new Error(`No se encontró el rate limit para la fuente: ${source}`);
 	}
