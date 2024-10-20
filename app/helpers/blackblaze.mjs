@@ -72,19 +72,20 @@ export async function uploadVideo(bucketId, videoName, videoPath) {
 
 		const videoBuffer = await fs.readFile(videoPath);
 
-		const uploadResponse = await b2.uploadFile({
+		await b2.uploadFile({
 			uploadUrl: uploadUrlResponse.data.uploadUrl,
 			uploadAuthToken: uploadUrlResponse.data.authorizationToken,
 			fileName: videoName,
 			data: videoBuffer,
 		});
+
 		return {
 			message: "Video uploaded successfully",
 			status: 201,
 		};
 	} catch (err) {
 		return {
-			error_message: err.message,
+			error_message: "Something went wrong; upload was not successful.",
 			status: err.response.status,
 		};
 	}
@@ -131,12 +132,15 @@ export async function deleteAllFileVersions(bucketId, fileName) {
 			}
 		}
 
-		console.log(`All versions of file '${fileName}' deleted successfully.`);
+		return {
+			status: 200,
+			message: "Video was deleted successfully",
+		};
 	} catch (err) {
-		console.error(
-			`Error deleting versions of file '${fileName}':`,
-			err.message,
-		);
-		throw err;
+		console.log(err);
+		return {
+			error_message: "Something went wrong; deletion was not successful.",
+			status: err.response.status,
+		};
 	}
 }

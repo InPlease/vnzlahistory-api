@@ -55,7 +55,6 @@ const main = ({ app, prisma, prefix }) => {
 	app.put(`${prefix}/video/edit`, async (req, res) => {
 		try {
 			const { id, ui_title, description, tags } = req.body;
-
 			const video_exist = await prisma.video.findUnique({
 				where: {
 					id,
@@ -85,7 +84,9 @@ const main = ({ app, prisma, prefix }) => {
 
 			if (tags && Array.isArray(tags)) {
 				await prisma.video.update({
-					where: { id },
+					where: {
+						id,
+					},
 					data: {
 						tags: {
 							deleteMany: {},
@@ -94,7 +95,9 @@ const main = ({ app, prisma, prefix }) => {
 				});
 
 				await prisma.video.update({
-					where: { id },
+					where: {
+						id,
+					},
 					data: {
 						tags: {
 							create: tags.map((tagId) => ({
@@ -109,7 +112,9 @@ const main = ({ app, prisma, prefix }) => {
 
 			if (Object.keys(filtered_payload).length > 0) {
 				await prisma.video.update({
-					where: { id },
+					where: {
+						id,
+					},
 					data: {
 						...filtered_payload,
 					},
