@@ -11,7 +11,7 @@ import cors from "cors";
 import { rateLimitFunction } from "./helpers/rateLimiters.mjs";
 
 // Helpers
-import { cacheTime } from "./helpers/generics.mjs";
+import { cacheTime } from "./helpers/globals.mjs";
 
 // Routes
 import MainGet from "./api/_get/main.mjs";
@@ -50,7 +50,7 @@ const params = {
 };
 
 app.get(
-	"/",
+	`${process.env.BASE_URL}/`,
 	cache(cacheTime),
 	ratelimitConfigs.generalLimiter,
 	async (req, res) => {

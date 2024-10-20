@@ -1,64 +1,94 @@
 generator client {
-    provider        = "prisma-client-js"
-    previewFeatures = ["driverAdapters"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-    provider = "sqlite"
-    url      = "file:./dev.db"
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
-// Videos
 model Video {
-    id                               Int                 @id @default(autoincrement())
-    bucket_file_name                 String              @unique
-    ui_title                         String?
-    url                              String              @unique
-    description                      String
-    createdAt                        DateTime            @default(now())
-    updatedAt                        DateTime            @updatedAt
-    is_verified                      Boolean
-    is_reported                      Boolean
-    report_type                      String?
-    report_team_comments             String?
-    community_clarification_response CommunityComments[]
-    tags                             VideoTag[]
+  id                               Int                 @id @default(autoincrement())
+  bucket_file_name                 String              @unique
+  ui_title                         String?
+  url                              String              @unique
+  description                      String
+  createdAt                        DateTime            @default(now())
+  updatedAt                        DateTime            @updatedAt
+  is_verified                      Boolean
+  is_reported                      Boolean
+  report_type                      String?
+  report_team_comments             String?
+  community_clarification_response CommunityComments[]
+  tags                             VideoTag[]
+}
+
+model RateLimit {
+  id                  Int      @id @default(autoincrement())
+  source              String
+  maxRequestsPerDay   Int
+  totalRequests       Int      @default(0)
+  totalHourlyRequests Int      @default(0)
+  lastReset           DateTime @default(now())
+}
+
+model requestLog {
+  id        Int      @id @default(autoincrement())
+  source    String
+  createdAt DateTime @default(now())
+}
+
+model NewsSource {
+  id        Int      @id @default(autoincrement())
+  source    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  news      News[]
+}
+
+model News {
+  id           Int        @id @default(autoincrement())
+  title        String
+  content      String
+  author       String?
+  url          String     @unique
+  image        String?
+  category     String?
+  language     String?
+  country      String?
+  publishedAt  DateTime   @map("published_at")
+  newsSourceId Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  source       NewsSource @relation(fields: [newsSourceId], references: [id])
 }
 
 model Tag {
-    id     Int        @id @default(autoincrement())
-    name   String     @unique
-    videos VideoTag[]
+  id     Int        @id @default(autoincrement())
+  name   String     @unique
+  videos VideoTag[]
 }
 
 model VideoTag {
-    video   Video @relation(fields: [videoId], references: [id])
-    videoId Int
-    tag     Tag   @relation(fields: [tagId], references: [id])
-    tagId   Int
+  videoId Int
+  tagId   Int
+  tag     Tag   @relation(fields: [tagId], references: [id])
+  video   Video @relation(fields: [videoId], references: [id])
 
-    @@id([videoId, tagId])
+  @@id([videoId, tagId])
 }
 
-// Community
 model CommunityComments {
-    id       Int    @id @default(autoincrement())
-    comment  String
-    video_id Int
-    Video    Video  @relation(fields: [video_id], references: [id])
+  id       Int    @id @default(autoincrement())
+  comment  String
+  video_id Int
+  Video    Video  @relation(fields: [video_id], references: [id])
 }
 
-// Limits
-model Limits {
-    id                 Int @id @default(autoincrement())
-    maxUploadedPerDay  Int
-    totalUploadedToday Int
-}
-
-// Reports
 model Report {
-    id         Int    @id @default(autoincrement())
-    name       String @unique
-    severity   Int
-    reportType String
+  id         Int    @id @default(autoincrement())
+  name       String @unique
+  severity   Int
+  reportType String
 }

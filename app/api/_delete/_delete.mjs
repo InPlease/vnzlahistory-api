@@ -26,17 +26,34 @@ const main = ({ app, prisma, prefix }) => {
 
 	app.delete(`${prefix}/video/delete`, async (req, res) => {
 		try {
-			const { file_name } = res;
+			const { file_name } = req.body;
 
-			await deleteAllFileVersions(process.env.BUCKET_ID, file_name);
-			res.json({
-				message: "Video was deleted.",
+			const video_exist = await prisma.video.findUnique({
+				where: {
+					bucket_file_name: file_name,
+				},
+			});
+
+			if (!video_exist.id) {
+				return res.json({
+					message: "The video does not exist.",
+					status: 404,
+				});
+			}
+
+			const deletionResponse = await deleteAllFileVersions(
+				process.env.BUCKET_ID,
+				file_name,
+			);
+
+			return res.json({
+				message: deletionResponse.message,
 				status: 200,
 			});
 		} catch (err) {
 			res.status(500).send({
 				error: "An unexpected error occurred while deleting the tag",
-				errorCode: error.code,
+				errorCode: err.code,
 			});
 		}
 	});
