@@ -88,7 +88,7 @@ const main = ({ app, prisma, prefix }) => {
 					.map((news) =>
 						centralizeNewsProperties(news, news.newsSourceId, source),
 					)
-					.slice(0, 10)
+					.slice(0, limit)
 					.reverse(),
 			});
 		}
@@ -156,7 +156,7 @@ const main = ({ app, prisma, prefix }) => {
 
 			return res.status(200).json({
 				message: "News obtained and saved successfully.",
-				data: existingNews.concat(newsData).slice(0, 10).reverse(),
+				data: existingNews.concat(newsData).slice(0, limit).reverse(),
 			});
 		} catch (error) {
 			console.error(error);
