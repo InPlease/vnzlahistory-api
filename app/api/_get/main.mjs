@@ -6,7 +6,7 @@ import {
 } from "../../helpers/globals.mjs";
 
 const main = ({ app, prisma, prefix }) => {
-	app.get(`${prefix}/tag/list`, async (req, res) => {
+	app.get("/tag/list", async (req, res) => {
 		try {
 			const tagList = await prisma.tag.findMany();
 			res.json({
@@ -21,7 +21,7 @@ const main = ({ app, prisma, prefix }) => {
 		}
 	});
 
-	app.get(`${prefix}/videos/list`, async (req, res) => {
+	app.get("/videos/list", async (req, res) => {
 		try {
 			const page = Number.parseInt(req.query.page) || 1;
 			const limit = Number.parseInt(req.query.limit) || 20;
@@ -59,7 +59,7 @@ const main = ({ app, prisma, prefix }) => {
 	 * from the news API source. Additionally, the user can actually get the saved news from the
 	 * database by using this endpoint.
 	 */
-	app.get(`${prefix}/news`, async (req, res) => {
+	app.get("/news", async (req, res) => {
 		const source = req.query.source;
 		const limit = req.query.limit || 30;
 

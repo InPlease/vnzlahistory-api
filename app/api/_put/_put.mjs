@@ -2,7 +2,7 @@
 import { cleanedPayload } from "../../helpers/globals.mjs";
 
 const main = ({ app, prisma, prefix }) => {
-	app.put(`${prefix}/tag/edit`, async (req, res) => {
+	app.put("/tag/edit", async (req, res) => {
 		try {
 			const { id, new_name } = req.body;
 
@@ -52,7 +52,7 @@ const main = ({ app, prisma, prefix }) => {
 		}
 	});
 
-	app.put(`${prefix}/video/edit`, async (req, res) => {
+	app.put("/video/edit", async (req, res) => {
 		try {
 			const { id, ui_title, description, tags } = req.body;
 			const video_exist = await prisma.video.findUnique({
