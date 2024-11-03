@@ -24,12 +24,12 @@ const ratelimitConfigs = rateLimitFunction(rateLimit);
 const cache = apicache.middleware;
 apicache.options({ debug: true });
 
-export const turso = createClient({
+const turso = createClient({
 	url: process.env.TURSO_DATABASE_URL,
 	authToken: process.env.TURSO_AUTH_TOKEN,
 });
 const adapter = new PrismaLibSQL(turso);
-export const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient({ adapter });
 
 const app = express();
 const port = process.env.PORT;
@@ -71,3 +71,5 @@ app.listen(port, () => {
 		`Welcome! The backend is working well, and all endpoints will be listening locally on this port → ${port} 🚀`,
 	);
 });
+
+export default app;
