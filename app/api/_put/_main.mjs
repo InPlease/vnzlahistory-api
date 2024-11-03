@@ -1,7 +1,7 @@
 // Helpers
 import { cleanedPayload } from "../../helpers/globals.mjs";
 
-const main = ({ app, prisma, prefix }) => {
+const main = ({ app, prisma }) => {
 	app.put("/tag/edit", async (req, res) => {
 		try {
 			const { id, new_name } = req.body;

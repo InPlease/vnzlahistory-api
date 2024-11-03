@@ -45,11 +45,10 @@ const params = {
 	app,
 	prisma,
 	ratelimitConfigs,
-	prefix: process.env.BASE_URL,
 };
 
 app.get(
-	`${process.env.BASE_URL}/`,
+	"/",
 	cache(cacheTime),
 	ratelimitConfigs.generalLimiter,
 	async (req, res) => {

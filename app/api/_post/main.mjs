@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-const main = ({ app, prisma, prefix }) => {
+const main = ({ app, prisma }) => {
 	app.post("/create/tag", async (req, res) => {
 		try {
 			const { tag_name } = req.body;

@@ -5,7 +5,7 @@ import {
 	newsUrls,
 } from "../../helpers/globals.mjs";
 
-const main = ({ app, prisma, prefix }) => {
+const main = ({ app, prisma }) => {
 	app.get("/tag/list", async (req, res) => {
 		try {
 			const tagList = await prisma.tag.findMany();
