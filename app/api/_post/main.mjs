@@ -24,8 +24,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-const main = ({ app, prisma, prefix }) => {
-	app.post(`${prefix}/create/tag`, async (req, res) => {
+const main = ({ app, prisma }) => {
+	app.post("/create/tag", async (req, res) => {
 		try {
 			const { tag_name } = req.body;
 
@@ -48,102 +48,98 @@ const main = ({ app, prisma, prefix }) => {
 		}
 	});
 
-	app.post(
-		`${prefix}/create-video`,
-		upload.single("videoFile"),
-		async (req, res) => {
-			try {
-				const { bucket_file_name, description, video_tags } = req.body;
-				const videoFile = req.file;
+	app.post("/create-video", upload.single("videoFile"), async (req, res) => {
+		try {
+			const { bucket_file_name, description, video_tags } = req.body;
+			const videoFile = req.file;
 
-				if (!videoFile) {
-					return res.status(400).json({
-						error: "No video file uploaded",
-						is_video_received: false,
-					});
-				}
-
-				const alreadyExistVideo = await prisma.video.findUnique({
-					where: {
-						bucket_file_name,
-					},
+			if (!videoFile) {
+				return res.status(400).json({
+					error: "No video file uploaded",
+					is_video_received: false,
 				});
+			}
 
-				if (alreadyExistVideo) {
-					return res.status(409).json({
-						error: "A video with this file name already exists",
-						already_exist: true,
-					});
-				}
+			const alreadyExistVideo = await prisma.video.findUnique({
+				where: {
+					bucket_file_name,
+				},
+			});
 
-				const urlFile = `${encodeURIComponent(bucket_file_name)}.${videoFile.filename.split(".")[1]}`;
-				const fileName = `${bucket_file_name}.${videoFile.filename.split(".")[1]}`;
+			if (alreadyExistVideo) {
+				return res.status(409).json({
+					error: "A video with this file name already exists",
+					already_exist: true,
+				});
+			}
 
-				const uploadVideoToBucket = await uploadVideo(
-					process.env.BUCKET_ID,
-					fileName,
-					videoFile.path,
-				);
+			const urlFile = `${encodeURIComponent(bucket_file_name)}.${videoFile.filename.split(".")[1]}`;
+			const fileName = `${bucket_file_name}.${videoFile.filename.split(".")[1]}`;
 
-				if (uploadVideoToBucket?.status !== 201) {
-					return res.status(uploadVideoToBucket.status).json({
-						error: uploadVideoToBucket.error_message,
-						status: uploadVideoToBucket.status,
-					});
-				}
+			const uploadVideoToBucket = await uploadVideo(
+				process.env.BUCKET_ID,
+				fileName,
+				videoFile.path,
+			);
 
-				const fileUrl = `${process.env.BLACKBLAZE_BASE_URL}/${process.env.BUCKET_NAME}/${urlFile}`;
+			if (uploadVideoToBucket?.status !== 201) {
+				return res.status(uploadVideoToBucket.status).json({
+					error: uploadVideoToBucket.error_message,
+					status: uploadVideoToBucket.status,
+				});
+			}
 
-				const newVideo = await prisma.video.create({
-					data: {
-						bucket_file_name,
-						url: fileUrl,
-						description,
-						tags: {
-							create: JSON.parse(video_tags).map((tagName) => ({
-								tag: {
-									connectOrCreate: {
-										where: { name: tagName },
-										create: { name: tagName },
-									},
+			const fileUrl = `${process.env.BLACKBLAZE_BASE_URL}/${process.env.BUCKET_NAME}/${urlFile}`;
+
+			const newVideo = await prisma.video.create({
+				data: {
+					bucket_file_name,
+					url: fileUrl,
+					description,
+					tags: {
+						create: JSON.parse(video_tags).map((tagName) => ({
+							tag: {
+								connectOrCreate: {
+									where: { name: tagName },
+									create: { name: tagName },
 								},
-							})),
-						},
-						createdAt: new Date(),
-						is_verified: false,
-						is_reported: false,
+							},
+						})),
 					},
-				});
+					createdAt: new Date(),
+					is_verified: false,
+					is_reported: false,
+				},
+			});
 
-				const response = {
-					...newVideo,
-					video_tags,
-				};
+			const response = {
+				...newVideo,
+				video_tags,
+			};
 
-				res.status(201).json({
-					message: "Video was uploaded successfully, enjoy!",
-					status: 201,
-					videoInfo: response,
-					is_video_received: true,
-				});
-			} catch (error) {
-				return res.status(500).json({
-					error: "An unexpected error occurred while creating the video",
-					errorCode: error.code || error.message,
-				});
-			} finally {
-				if (req.file?.path) {
-					try {
-						await fs.promises.unlink(req.file.path);
-					} catch (err) {
-						console.error("Error deleting temp file:", err);
-					}
+			res.status(201).json({
+				message: "Video was uploaded successfully, enjoy!",
+				status: 201,
+				videoInfo: response,
+				is_video_received: true,
+			});
+		} catch (error) {
+			return res.status(500).json({
+				error: "An unexpected error occurred while creating the video",
+				errorCode: error.code || error.message,
+			});
+		} finally {
+			if (req.file?.path) {
+				try {
+					await fs.promises.unlink(req.file.path);
+				} catch (err) {
+					console.error("Error deleting temp file:", err);
 				}
 			}
-		},
-	);
+		}
+	});
 
-	app.post(`${prefix}/create/rate-limit`, async (req, res) => {
+	app.post("/create/rate-limit", async (req, res) => {
 		const { source, maxRequestsPerDay } = req.body;
 
 		try {
