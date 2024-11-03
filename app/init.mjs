@@ -16,8 +16,8 @@ import { cacheTime } from "./helpers/globals.mjs";
 // Routes
 import MainGet from "./api/_get/main.mjs";
 import MainPost from "./api/_post/main.mjs";
-import MainDelete from "./api/_delete/_delete.mjs";
-import MainPut from "./api/_put/_put.mjs";
+import MainDelete from "./api/_delete/_main.mjs";
+import MainPut from "./api/_put/_main.mjs";
 
 const ratelimitConfigs = rateLimitFunction(rateLimit);
 
@@ -45,11 +45,10 @@ const params = {
 	app,
 	prisma,
 	ratelimitConfigs,
-	prefix: process.env.BASE_URL,
 };
 
 app.get(
-	`${process.env.BASE_URL}/`,
+	"/",
 	cache(cacheTime),
 	ratelimitConfigs.generalLimiter,
 	async (req, res) => {
