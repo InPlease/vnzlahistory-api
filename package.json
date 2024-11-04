@@ -6,7 +6,7 @@
 		"start": "yarn prisma:generate && node ./app/init.mjs",
 		"biome:check": "biome check .",
 		"biome:format": "biome format .",
-		"prepare": "husky install",
+		"prepare": "husky",
 		"prisma:generate": "prisma generate"
 	},
 	"keywords": [],
