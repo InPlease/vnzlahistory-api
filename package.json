@@ -3,10 +3,11 @@
 	"version": "1.0.0",
 	"main": "index.js",
 	"scripts": {
-		"run:all": "dotenv -e .env node ./app/init.mjs",
+		"start": "yarn prisma:generate && node ./app/init.mjs",
 		"biome:check": "biome check .",
 		"biome:format": "biome format .",
-		"prepare": "husky"
+		"prepare": "husky install",
+		"prisma:generate": "prisma generate"
 	},
 	"keywords": [],
 	"author": "",
