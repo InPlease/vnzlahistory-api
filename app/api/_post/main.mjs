@@ -1,7 +1,9 @@
 // Dependencies
-import fs from "node:fs";
+// biome-ignore lint/style/useNodejsImportProtocol: <explanation>
+import fs from "fs";
 import multer from "multer";
-import path from "node:path";
+// biome-ignore lint/style/useNodejsImportProtocol: <explanation>
+import path from "path";
 
 // Helpers
 import { uploadVideo } from "../../helpers/blackblaze.mjs";
