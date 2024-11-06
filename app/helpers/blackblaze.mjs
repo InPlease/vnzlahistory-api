@@ -67,7 +67,6 @@ export async function authenticate() {
 export async function uploadVideo(bucketId, videoName, videoPath) {
 	try {
 		await b2.authorize();
-
 		const uploadUrlResponse = await b2.getUploadUrl({ bucketId });
 
 		const videoBuffer = await fs.readFile(videoPath);
