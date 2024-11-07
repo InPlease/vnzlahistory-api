@@ -57,5 +57,34 @@ const main = ({ app, prisma }) => {
 			});
 		}
 	});
+
+	app.delete("/news", async (req, res) => {
+		const { url } = req.body;
+
+		if (!url) {
+			return res.status(400).json({ error: "URL is required" });
+		}
+
+		try {
+			const newsItem = await prisma.news.findUnique({
+				where: { url: url },
+			});
+
+			if (!newsItem) {
+				return res.status(404).json({ error: "News item not found" });
+			}
+
+			await prisma.news.delete({
+				where: { url: url },
+			});
+
+			return res
+				.status(200)
+				.json({ message: "News item deleted successfully" });
+		} catch (error) {
+			console.error("Error deleting news item:", error);
+			return res.status(500).json({ error: "Internal server error" });
+		}
+	});
 };
 export default main;
