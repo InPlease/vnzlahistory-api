@@ -1,4 +1,4 @@
-const rateLimitTime = 5 * 60 * 1000;
+const rateLimitTime = 5 * 1000;
 
 export const rateLimitFunction = (rate) => {
 	const generalLimiter = rate({
@@ -9,7 +9,7 @@ export const rateLimitFunction = (rate) => {
 		message: {
 			status: 429,
 			error:
-				"You have exceeded the request limit. Now, you have to wait 15 minutes to refresh. Please try again later.",
+				"You have exceeded the request limit. Please wait 5 seconds before trying again.",
 		},
 		handler: (req, res, next, options) => {
 			res.status(options.statusCode).send(options.message);
@@ -18,7 +18,7 @@ export const rateLimitFunction = (rate) => {
 
 	const downloadLimiter = rate({
 		windowMs: rateLimitTime,
-		limit: 5,
+		limit: 2,
 		standardHeaders: "draft-7",
 		message: {
 			status: 429,
