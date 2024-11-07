@@ -69,7 +69,7 @@ const main = ({ app, prisma }) => {
 			});
 		}
 
-		const canRequest = true;
+		const canRequest = await canMakeRequest(source, prisma);
 
 		const existingSource = await prisma.newsSource.findUnique({
 			where: { source: source },
