@@ -116,7 +116,7 @@ export const centralizeNewsProperties = (article, sourceId, source) => {
 					article.creator ||
 					article.author ||
 					"source.unknown",
-				url: article.link,
+				url: article.link || article.url,
 				image: article.image_url || article.image || null,
 				category: Array.isArray(article.category)
 					? article.category?.[0]
