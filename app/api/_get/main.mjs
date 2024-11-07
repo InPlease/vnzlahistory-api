@@ -69,7 +69,7 @@ const main = ({ app, prisma }) => {
 			});
 		}
 
-		const canRequest = await canMakeRequest(source, prisma);
+		const canRequest = true;
 
 		const existingSource = await prisma.newsSource.findUnique({
 			where: { source: source },
@@ -88,8 +88,8 @@ const main = ({ app, prisma }) => {
 					.map((news) =>
 						centralizeNewsProperties(news, news.newsSourceId, source),
 					)
-					.slice(0, limit)
-					.reverse(),
+					.reverse()
+					.slice(0, limit),
 			});
 		}
 
@@ -129,34 +129,44 @@ const main = ({ app, prisma }) => {
 
 			for (const newsItem of newsData) {
 				try {
-					await prisma.news.create({
-						data: {
-							title: newsItem.title,
-							content: newsItem.content,
-							author: newsItem.author,
-							url: newsItem.url,
-							image: newsItem.image,
-							category: newsItem.category,
-							language: newsItem.language,
-							country: newsItem.country,
-							publishedAt: newsItem.publishedAt,
-							newsSourceId: newsItem.newsSourceId,
-						},
-					});
-				} catch (error) {
-					if (error.code === "P2002") {
-						console.warn(
-							`News with URL ${newsItem.url} already exists, skipping...`,
-						);
+					if (newsItem.image) {
+						const existingNews = await prisma.news.findUnique({
+							where: { url: newsItem.url },
+						});
+
+						if (!existingNews) {
+							await prisma.news.create({
+								data: {
+									title: newsItem.title,
+									content: newsItem.content,
+									author: newsItem.author,
+									url: newsItem.url,
+									image: newsItem.image,
+									category: newsItem.category,
+									language: newsItem.language,
+									country: newsItem.country,
+									publishedAt: newsItem.publishedAt,
+									newsSourceId: newsItem.newsSourceId,
+								},
+							});
+						} else {
+							console.warn(
+								`News with URL ${newsItem.url} already exists, skipping...`,
+							);
+						}
 					} else {
-						console.error("Error saving news:", error);
+						console.log(
+							`Skipping news item with URL ${newsItem.url} due to null image.`,
+						);
 					}
+				} catch (error) {
+					console.error("Error saving news:", error);
 				}
 			}
 
 			return res.status(200).json({
 				message: "News obtained and saved successfully.",
-				data: existingNews.concat(newsData).slice(0, limit).reverse(),
+				data: existingNews.concat(newsData).reverse().slice(0, limit),
 			});
 		} catch (error) {
 			console.error(error);

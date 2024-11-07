@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 export const __dirname = dirname(__filename);
 
 const uploadDir = path.join(__dirname, "../uploads/");
-console.log("ACAA", __dirname);
+
 if (!fs.existsSync(uploadDir)) {
 	fs.mkdirSync(uploadDir, { recursive: true });
 }
