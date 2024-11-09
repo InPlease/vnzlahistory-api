@@ -3,15 +3,17 @@ export const cacheTime = "5 minutes";
 
 export const NEWS_REQUEST_INTERVAL_HOURS = 1.6 * 60 * 60 * 1000;
 
-export const newsUrls = {
-	newsdata: {
-		url: `${process.env.NEWS_DATA_BASE_URL}?apikey=${process.env.NEWS_DATA_API_KEY}&language=es&country=ve`,
-		data_key: "results",
-	},
-	mediastack: {
-		url: `${process.env.MEDIA_STACK_BASE_URL}?access_key=${process.env.MEDIA_STACK_API}&countries=ve`,
-		data_key: "news_items",
-	},
+export const newsUrls = (category) => {
+	return {
+		newsdata: {
+			url: `${process.env.NEWS_DATA_BASE_URL}?apikey=${process.env.NEWS_DATA_API_KEY}&language=es&country=ve&category=${category}`,
+			data_key: "results",
+		},
+		gnews: {
+			url: `https://gnews.io/api/v4/top-headlines?category=${category}&lang=es&max=30&apikey=${process.env.GNEWS_API_KEY}`,
+			data_key: "articles",
+		},
+	};
 };
 
 // Methods
@@ -104,13 +106,20 @@ export async function canMakeRequest(source, prisma) {
 	return false;
 }
 
-export const centralizeNewsProperties = (article, sourceId, source) => {
+export const centralizeNewsProperties = (
+	article,
+	sourceId,
+	source,
+	category,
+) => {
 	switch (source) {
 		case "newsdata":
 			return {
-				title: article.title || "No title available",
+				title: article.title || "news.not_available_title",
 				content:
-					article.description || article.content || "No content available",
+					article.description ||
+					article.content ||
+					"news.not_available_content",
 				author:
 					article.creator?.[0] ||
 					article.creator ||
@@ -128,21 +137,22 @@ export const centralizeNewsProperties = (article, sourceId, source) => {
 				publishedAt: new Date(article.pubDate || article.publishedAt),
 				newsSourceId: sourceId,
 			};
-		case "mediastack":
+		case "gnews":
 			return {
-				title: article.title || "No title available",
-				content: article.description || "No content available",
-				author: article.author || "source.unknown",
+				title: article.title || "news.not_available_title",
+				content: article.content || "news.not_available_content",
+				author:
+					article.source.name ||
+					article.source.author ||
+					"news.not_available_author",
 				url: article.url,
-				image: article.image || null,
-				category: article.category || "General",
-				language: article.language || "en",
-				country: article.country || "us",
-				publishedAt: new Date(article.published_at || article.publishedAt),
+				image: article.image,
+				category,
+				publishedAt: new Date(article.pubDate || article.publishedAt),
 				newsSourceId: sourceId,
 			};
 		default:
-			return "Ab errir";
+			return false;
 	}
 };
 

@@ -62,6 +62,7 @@ const main = ({ app, prisma }) => {
 	app.get("/news", async (req, res) => {
 		const source = req.query.source;
 		const limit = req.query.limit || 30;
+		const category = req.query.category;
 
 		if (!source) {
 			return res.status(400).json({
@@ -93,7 +94,7 @@ const main = ({ app, prisma }) => {
 			});
 		}
 
-		const apiConfig = newsUrls[source];
+		const apiConfig = newsUrls(category)[source];
 
 		try {
 			const response = await fetch(apiConfig.url);
@@ -169,7 +170,7 @@ const main = ({ app, prisma }) => {
 				data: existingNews.concat(newsData).reverse().slice(0, limit),
 			});
 		} catch (error) {
-			console.error(error);
+			console.error(error, "DATA");
 			return res.status(500).json({ error: "Error retrieving news." });
 		}
 	});
