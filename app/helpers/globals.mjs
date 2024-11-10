@@ -6,11 +6,11 @@ export const NEWS_REQUEST_INTERVAL_HOURS = 1.6 * 60 * 60 * 1000;
 export const newsUrls = (category) => {
 	return {
 		newsdata: {
-			url: `${process.env.NEWS_DATA_BASE_URL}?apikey=${process.env.NEWS_DATA_API_KEY}&language=es&country=ve&category=${category}`,
+			url: `${process.env.NEWS_DATA_BASE_URL}?apikey=${process.env.NEWS_DATA_API_KEY}&removeduplicate=1&language=es&image=1&country=ve${category ? `&category=${category}` : ""}`,
 			data_key: "results",
 		},
 		gnews: {
-			url: `https://gnews.io/api/v4/top-headlines?category=${category}&lang=es&max=30&apikey=${process.env.GNEWS_API_KEY}`,
+			url: `${process.env.GNEWS_BASE_URL}/top-headlines?category=${category}&lang=es&max=30&apikey=${process.env.GNEWS_API_KEY}`,
 			data_key: "articles",
 		},
 	};
@@ -31,9 +31,8 @@ export async function canMakeRequest(source, prisma) {
 	});
 
 	if (!rateLimit) {
-		throw new Error(`No se encontró el rate limit para la fuente: ${source}`);
+		throw new Error(`Source was not found: ${source}`);
 	}
-
 	const currentDate = new Date();
 	const lastResetDate = new Date(rateLimit.lastReset);
 
@@ -66,6 +65,13 @@ export async function canMakeRequest(source, prisma) {
 	});
 
 	if (!lastRequestLog) {
+		await prisma.requestLog.create({
+			data: {
+				source: source,
+				createdAt: currentDate,
+			},
+		});
+
 		return true;
 	}
 
@@ -142,9 +148,7 @@ export const centralizeNewsProperties = (
 				title: article.title || "news.not_available_title",
 				content: article.content || "news.not_available_content",
 				author:
-					article.source.name ||
-					article.source.author ||
-					"news.not_available_author",
+					article.source?.name || article.author || "news.not_available_author",
 				url: article.url,
 				image: article.image,
 				category,
