@@ -63,6 +63,7 @@ const main = ({ app, prisma }) => {
 		const source = req.query.source;
 		const limit = req.query.limit || 30;
 		const category = req.query.category;
+		const reFill = req.query.reFill;
 
 		if (!source) {
 			return res.status(400).json({
@@ -70,7 +71,7 @@ const main = ({ app, prisma }) => {
 			});
 		}
 
-		const canRequest = await canMakeRequest(source, prisma);
+		const canRequest = await canMakeRequest(source, prisma, reFill);
 
 		const existingSource = await prisma.newsSource.findUnique({
 			where: { source: source },

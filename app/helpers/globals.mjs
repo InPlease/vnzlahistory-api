@@ -3,7 +3,8 @@ export const cacheTime = "5 minutes";
 
 export const NEWS_REQUEST_INTERVAL_HOURS = 1.6 * 60 * 60 * 1000;
 
-export const newsUrls = (category) => {
+// Validate scenarios when keys or something are wrong
+export const newsUrls = (category, search) => {
 	return {
 		newsdata: {
 			url: `${process.env.NEWS_DATA_BASE_URL}?apikey=${process.env.NEWS_DATA_API_KEY}&removeduplicate=1&language=es&image=1&country=ve${category ? `&category=${category}` : ""}`,
@@ -12,6 +13,10 @@ export const newsUrls = (category) => {
 		gnews: {
 			url: `${process.env.GNEWS_BASE_URL}/top-headlines?category=${category}&lang=es&max=30&apikey=${process.env.GNEWS_API_KEY}`,
 			data_key: "articles",
+		},
+		thenewsapi: {
+			url: `${process.env.THE_NEWS_BASE_URL}/top?api_token=${process.env.THE_NEWS_API_KEY}&locale=us&limit=5&language=es${search ? `&search=${search}` : ""}`,
+			data_key: "data",
 		},
 	};
 };
@@ -25,7 +30,12 @@ export const cleanedPayload = (payload) =>
 		return acc;
 	}, {});
 
-export async function canMakeRequest(source, prisma) {
+/**
+ * @param {string} source - News source name
+ * @param {Prisma} prisma
+ * @param {boolean} reFill - When we need data, enable this by body request (Take care)
+ */
+export async function canMakeRequest(source, prisma, reFill) {
 	const rateLimit = await prisma.rateLimit.findFirst({
 		where: { source: source },
 	});
@@ -63,6 +73,17 @@ export async function canMakeRequest(source, prisma) {
 		where: { source: source },
 		orderBy: { createdAt: "desc" },
 	});
+
+	if (reFill) {
+		await prisma.requestLog.create({
+			data: {
+				source: source,
+				createdAt: currentDate,
+			},
+		});
+
+		return true;
+	}
 
 	if (!lastRequestLog) {
 		await prisma.requestLog.create({
@@ -154,6 +175,21 @@ export const centralizeNewsProperties = (
 				category,
 				publishedAt: new Date(article.pubDate || article.publishedAt),
 				newsSourceId: sourceId,
+			};
+		case "thenewsapi":
+			return {
+				title: article.title || "news.not_available_title",
+				content:
+					article.description ||
+					article.content ||
+					"news.not_available_content",
+				author: article.source || article.author || "news.not_available_author",
+				url: article.url,
+				image: article.image_url || article.image,
+				category: article.categories[0] || article.categories,
+				publishedAt: new Date(article.published_at || article.publishedAt),
+				newsSourceId: sourceId,
+				language: article.locale || article.language,
 			};
 		default:
 			return false;
