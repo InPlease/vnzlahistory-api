@@ -142,6 +142,7 @@ export const centralizeNewsProperties = (
 	switch (source) {
 		case "newsdata":
 			return {
+				id: article.id,
 				title: article.title || "news.not_available_title",
 				content:
 					article.description ||
@@ -166,6 +167,7 @@ export const centralizeNewsProperties = (
 			};
 		case "gnews":
 			return {
+				id: article.id,
 				title: article.title || "news.not_available_title",
 				content: article.content || "news.not_available_content",
 				author:
@@ -178,6 +180,7 @@ export const centralizeNewsProperties = (
 			};
 		case "thenewsapi":
 			return {
+				id: article.id,
 				title: article.title || "news.not_available_title",
 				content:
 					article.description ||
@@ -186,7 +189,9 @@ export const centralizeNewsProperties = (
 				author: article.source || article.author || "news.not_available_author",
 				url: article.url,
 				image: article.image_url || article.image,
-				category: article.categories[0] || article.categories,
+				category: Array.isArray(article.categories)
+					? article.categories[0]
+					: article.categories,
 				publishedAt: new Date(article.published_at || article.publishedAt),
 				newsSourceId: sourceId,
 				language: article.locale || article.language,
