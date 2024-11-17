@@ -98,7 +98,6 @@ const main = ({ app, prisma }) => {
 
 			const urlFile = `${encodeURIComponent(bucket_file_name)}.${videoFile.filename.split(".")[1]}`;
 			const fileName = `${bucket_file_name}.${videoFile.filename.split(".")[1]}`;
-
 			const uploadVideoToBucket = await uploadVideo(
 				process.env.BUCKET_ID,
 				fileName,
@@ -111,11 +110,10 @@ const main = ({ app, prisma }) => {
 					status: uploadVideoToBucket.status,
 				});
 			}
-			const fileUrl = `${process.env.BLACKBLAZE_BASE_URL}/${process.env.BUCKET_NAME}/${urlFile}`;
 			const newVideo = await prisma.video.create({
 				data: {
-					bucket_file_name,
-					url: fileUrl,
+					bucket_file_name: urlFile,
+					url: "",
 					description,
 					tags: {
 						create: JSON.parse(video_tags).map((tagName) => ({

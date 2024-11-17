@@ -1,4 +1,5 @@
 // Utils
+import { generateDownloadUrl } from "../../helpers/blackblaze.mjs";
 import {
 	canMakeRequest,
 	centralizeNewsProperties,
@@ -25,20 +26,29 @@ const main = ({ app, prisma }) => {
 		try {
 			const page = Number.parseInt(req.query.page) || 1;
 			const limit = Number.parseInt(req.query.limit) || 20;
-
 			const skip = (page - 1) * limit;
 
 			const totalVideos = await prisma.video.count();
-
-			const video_list = await prisma.video.findMany({
+			const videoList = await prisma.video.findMany({
 				skip: skip,
 				take: limit,
 			});
 
+			const videoListWithUrls = await Promise.all(
+				videoList.map(async (video) => {
+					const downloadUrl = await generateDownloadUrl(video.bucket_file_name);
+					return {
+						...video,
+						ui_title: video.ui_title || video.bucket_file_name.split(".")[0],
+						url: downloadUrl,
+					};
+				}),
+			);
+
 			const totalPages = Math.ceil(totalVideos / limit);
 
 			res.status(200).json({
-				videos: video_list,
+				videos: videoListWithUrls,
 				pagination: {
 					currentPage: page,
 					totalPages: totalPages,

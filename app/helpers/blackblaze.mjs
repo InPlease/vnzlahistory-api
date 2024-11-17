@@ -7,15 +7,19 @@ export const b2 = new B2({
 	applicationKey: process.env.APPLICATION_KEY,
 });
 
-export async function GetBucket() {
+export async function generateDownloadUrl(fileName) {
 	try {
 		await b2.authorize();
-		const response = await b2.getBucket({
-			bucketName: process.env.BUCKET_NAME,
+
+		const response = await b2.getDownloadAuthorization({
+			bucketId: process.env.BUCKET_ID,
+			fileNamePrefix: fileName,
+			validDurationInSeconds: 3600,
 		});
-		console.log(response.data);
-	} catch (err) {
-		console.log("Error getting bucket:", err);
+
+		return `${process.env.BLACKBLAZE_BASE_URL}/${process.env.BUCKET_NAME}/${fileName}?Authorization=${response.data.authorizationToken}`;
+	} catch (error) {
+		console.error("Error al generar URL de descarga:", error);
 	}
 }
 
@@ -35,7 +39,7 @@ export async function GetBucketFiles() {
 
 			const files = response.data.files.map((file) => ({
 				fileName: file.fileName,
-				url: `${process.env.BLACK_BASE_URL}/${process.env.BUCKET_NAME}/${encodeURIComponent(file.fileName)}`,
+				url: `${process.env.BLACK_BASE_URL}/BUCKET_NAME/${encodeURIComponent(file.fileName)}`,
 			}));
 
 			videoFiles = [...videoFiles, ...files];
@@ -47,15 +51,6 @@ export async function GetBucketFiles() {
 	} catch (err) {
 		console.error("Error fetching video URLs:", err);
 		throw err;
-	}
-}
-
-export async function authenticate() {
-	try {
-		await b2.authorize();
-		console.log("Successfully authenticated with Backblaze B2");
-	} catch (err) {
-		console.error("Error authenticating with Backblaze B2:", err);
 	}
 }
 
@@ -136,7 +131,6 @@ export async function deleteAllFileVersions(bucketId, fileName) {
 			message: "Video was deleted successfully",
 		};
 	} catch (err) {
-		console.log(err);
 		return {
 			error_message: "Something went wrong; deletion was not successful.",
 			status: err.response.status,
