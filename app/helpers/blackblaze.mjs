@@ -17,7 +17,7 @@ export async function generateDownloadUrl(fileName) {
 			validDurationInSeconds: 3600,
 		});
 
-		return `${process.env.BLACKBLAZE_BASE_URL}/${process.env.BUCKET_NAME}/${fileName}?Authorization=${response.data.authorizationToken}`;
+		return `${process.env.BLACKBLAZE_BASE_URL}/BUCKET_NAME/${fileName}?Authorization=${response.data.authorizationToken}`;
 	} catch (error) {
 		console.error("Error al generar URL de descarga:", error);
 	}

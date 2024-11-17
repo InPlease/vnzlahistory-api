@@ -231,3 +231,10 @@ export const organizeNewsData = (layout, news) => {
 
 	return organizedLayout;
 };
+
+export const formatFileName = (fileName) => {
+	return fileName
+		.replace(/[^a-zA-Z0-9\s]/g, "")
+		.trim()
+		.replace(/\s+/g, "_");
+};

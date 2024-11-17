@@ -5,6 +5,7 @@ import path from "node:path";
 
 // Helpers
 import { uploadVideo } from "../../helpers/blackblaze.mjs";
+import { formatFileName } from "../../helpers/globals.mjs";
 
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
@@ -96,8 +97,9 @@ const main = ({ app, prisma }) => {
 				});
 			}
 
-			const urlFile = `${encodeURIComponent(bucket_file_name)}.${videoFile.filename.split(".")[1]}`;
-			const fileName = `${bucket_file_name}.${videoFile.filename.split(".")[1]}`;
+			const formattedName = formatFileName(bucket_file_name);
+			const urlFile = `${formattedName}.${videoFile.filename.split(".")[1]}`;
+			const fileName = `${formattedName}.${videoFile.filename.split(".")[1]}`;
 			const uploadVideoToBucket = await uploadVideo(
 				process.env.BUCKET_ID,
 				fileName,
@@ -110,26 +112,29 @@ const main = ({ app, prisma }) => {
 					status: uploadVideoToBucket.status,
 				});
 			}
+
+			const currTags = await prisma.tag.findMany({});
+			const tagsMap = currTags.reduce((acc, tag) => {
+				acc[tag.id] = tag.name;
+				return acc;
+			}, {});
+			const getTagsNames = JSON.parse(video_tags).map(
+				(tagId) => tagsMap[tagId],
+			);
+
 			const newVideo = await prisma.video.create({
 				data: {
 					bucket_file_name: urlFile,
 					url: "",
 					description,
-					tags: {
-						create: JSON.parse(video_tags).map((tagName) => ({
-							tag: {
-								connectOrCreate: {
-									where: { name: tagName },
-									create: { name: tagName },
-								},
-							},
-						})),
-					},
+					tags: getTagsNames.join(","),
 					createdAt: new Date(),
 					is_verified: false,
 					is_reported: false,
+					views: 0,
 				},
 			});
+
 			const response = {
 				...newVideo,
 				video_tags,

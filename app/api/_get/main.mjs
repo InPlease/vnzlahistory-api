@@ -25,7 +25,7 @@ const main = ({ app, prisma }) => {
 	app.get("/videos/list", async (req, res) => {
 		try {
 			const page = Number.parseInt(req.query.page) || 1;
-			const limit = Number.parseInt(req.query.limit) || 20;
+			const limit = Number.parseInt(req.query.limit) || 6;
 			const skip = (page - 1) * limit;
 
 			const totalVideos = await prisma.video.count();
@@ -37,9 +37,14 @@ const main = ({ app, prisma }) => {
 			const videoListWithUrls = await Promise.all(
 				videoList.map(async (video) => {
 					const downloadUrl = await generateDownloadUrl(video.bucket_file_name);
+					const transformName = video.bucket_file_name
+						.split("_")
+						.join(" ")
+						.split(".")[0];
 					return {
 						...video,
-						ui_title: video.ui_title || video.bucket_file_name.split(".")[0],
+						tags: video.tags.split(","),
+						ui_title: video.ui_title || transformName,
 						url: downloadUrl,
 					};
 				}),
@@ -57,6 +62,7 @@ const main = ({ app, prisma }) => {
 				},
 			});
 		} catch (error) {
+			console.log(error);
 			res.status(500).send({
 				error: "An unexpected error occurred while fetching the video list",
 				errorCode: error.code,
