@@ -25,7 +25,7 @@ const main = ({ app, prisma }) => {
 	app.get("/videos/list", async (req, res) => {
 		try {
 			const page = Number.parseInt(req.query.page) || 1;
-			const limit = Number.parseInt(req.query.limit) || 6;
+			const limit = Number.parseInt(req.query.limit) || 1;
 			const skip = (page - 1) * limit;
 
 			const totalVideos = await prisma.video.count();
@@ -36,7 +36,6 @@ const main = ({ app, prisma }) => {
 
 			const videoListWithUrls = await Promise.all(
 				videoList.map(async (video) => {
-					const downloadUrl = await generateDownloadUrl(video.bucket_file_name);
 					const transformName = video.bucket_file_name
 						.split("_")
 						.join(" ")
@@ -45,7 +44,6 @@ const main = ({ app, prisma }) => {
 						...video,
 						tags: video.tags.split(","),
 						ui_title: video.ui_title || transformName,
-						url: downloadUrl,
 					};
 				}),
 			);

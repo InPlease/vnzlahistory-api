@@ -22,7 +22,23 @@ model Video {
   report_team_comments             String?
   community_clarification_response CommunityComments[]
   tags                             String
-  views                            Int
+  views                             Int
+
+  thumbnailUrl String? @unique
+  thumbnail    Image?  @relation(fields: [thumbnailUrl], references: [url])
+}
+
+model Image {
+  url       String   @id @unique
+  altText   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  width     Int?
+  height    Int?
+  format    String?
+  size      Int?
+
+  Video Video?
 }
 
 model RateLimit {

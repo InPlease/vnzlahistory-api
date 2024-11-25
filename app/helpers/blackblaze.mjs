@@ -12,7 +12,7 @@ export async function generateDownloadUrl(fileName) {
 		await b2.authorize();
 
 		const response = await b2.getDownloadAuthorization({
-			bucketId: process.env.BUCKET_ID,
+			bucketId: process.env.BUCKET_VIDEOS_ID,
 			fileNamePrefix: fileName,
 			validDurationInSeconds: 3600,
 		});
@@ -32,7 +32,7 @@ export async function GetBucketFiles() {
 
 		do {
 			const response = await b2.listFileNames({
-				bucketId: process.env.BUCKET_ID,
+				bucketId: process.env.BUCKET_VIDEOS_ID,
 				startFileName: nextFileName,
 				maxFileCount: 20,
 			});
@@ -59,17 +59,20 @@ export async function GetBucketFiles() {
  * @param {string} videoName
  * @param {string} videoPath
  */
-export async function uploadVideo(bucketId, videoName, videoPath) {
+export async function uploadVideo(bucketId, folderPath, videoName, videoPath) {
 	try {
 		await b2.authorize();
+
 		const uploadUrlResponse = await b2.getUploadUrl({ bucketId });
 
 		const videoBuffer = await fs.readFile(videoPath);
 
+		const filePathInBucket = `${folderPath}/${videoName}`;
+
 		await b2.uploadFile({
 			uploadUrl: uploadUrlResponse.data.uploadUrl,
 			uploadAuthToken: uploadUrlResponse.data.authorizationToken,
-			fileName: videoName,
+			fileName: filePathInBucket,
 			data: videoBuffer,
 		});
 
@@ -80,7 +83,7 @@ export async function uploadVideo(bucketId, videoName, videoPath) {
 	} catch (err) {
 		return {
 			error_message: "Something went wrong; upload was not successful.",
-			status: err.response.status,
+			status: err.response?.status || 500,
 		};
 	}
 }
@@ -135,5 +138,30 @@ export async function deleteAllFileVersions(bucketId, fileName) {
 			error_message: "Something went wrong; deletion was not successful.",
 			status: err.response.status,
 		};
+	}
+}
+
+export async function uploadImage(bucketId, folderPath, fileName, filePath) {
+	try {
+		await b2.authorize();
+
+		const { data: uploadData } = await b2.getUploadUrl({ bucketId });
+
+		const fileBuffer = await fs.readFile(filePath);
+
+		const filePathInBucket = `${folderPath}/${fileName}`;
+
+		const { data: uploadResponse } = await b2.uploadFile({
+			uploadUrl: uploadData.uploadUrl,
+			uploadAuthToken: uploadData.authorizationToken,
+			fileName: filePathInBucket,
+			data: fileBuffer,
+		});
+
+		console.log("File uploaded successfully:", uploadResponse);
+		return uploadResponse;
+	} catch (error) {
+		console.error("Error uploading image:", error.message);
+		throw error;
 	}
 }

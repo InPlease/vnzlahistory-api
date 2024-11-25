@@ -42,7 +42,7 @@ const main = ({ app, prisma }) => {
 			}
 
 			const deletionResponse = await deleteAllFileVersions(
-				process.env.BUCKET_ID,
+				process.env.BUCKET_VIDEOS_ID,
 				file_name,
 			);
 
