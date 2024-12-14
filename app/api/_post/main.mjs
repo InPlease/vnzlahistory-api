@@ -169,7 +169,6 @@ const main = ({ app, prisma }) => {
 					(tagId) => tagsMap[tagId],
 				);
 
-				console.log(thumbnailUrl);
 				const newVideo = await prisma.video.create({
 					data: {
 						bucket_file_name: urlFile,
@@ -196,7 +195,6 @@ const main = ({ app, prisma }) => {
 					is_video_received: true,
 				});
 			} catch (error) {
-				console.log(error);
 				return res.status(500).json({
 					error: "An unexpected error occurred while creating the video",
 					errorCode: error.code || error.message,

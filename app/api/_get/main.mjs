@@ -1,9 +1,9 @@
 // Utils
-import { generateDownloadUrl } from "../../helpers/blackblaze.mjs";
 import {
 	canMakeRequest,
 	centralizeNewsProperties,
 	newsUrls,
+	formatBucketName,
 } from "../../helpers/globals.mjs";
 
 const main = ({ app, prisma }) => {
@@ -33,7 +33,7 @@ const main = ({ app, prisma }) => {
 				skip: skip,
 				take: limit,
 			});
-
+			console.log("1");
 			const videoListWithUrls = await Promise.all(
 				videoList.map(async (video) => {
 					const transformName = video.bucket_file_name
@@ -47,9 +47,9 @@ const main = ({ app, prisma }) => {
 					};
 				}),
 			);
-
+			console.log("2");
 			const totalPages = Math.ceil(totalVideos / limit);
-
+			console.log("3");
 			res.status(200).json({
 				videos: videoListWithUrls,
 				pagination: {
@@ -63,6 +63,31 @@ const main = ({ app, prisma }) => {
 			console.log(error);
 			res.status(500).send({
 				error: "An unexpected error occurred while fetching the video list",
+				errorCode: error.code,
+			});
+		}
+	});
+
+	app.get("/videos/specific", async (req, res) => {
+		try {
+			const id = Number(req.query.id);
+			const video = await prisma.video.findUnique({
+				where: {
+					id,
+				},
+			});
+
+			res.status(200).json({
+				title: formatBucketName(video.bucket_file_name),
+				tags: video.tags,
+				description: video.description,
+				createdAt: video.createdAt,
+				url: video.url,
+				views: video.views,
+			});
+		} catch (error) {
+			res.status(500).send({
+				error: "An unexpected error occurred while fetching the specific video",
 				errorCode: error.code,
 			});
 		}
@@ -98,14 +123,17 @@ const main = ({ app, prisma }) => {
 			: [];
 
 		if (!canRequest) {
+			const clonedExistingNews = [...existingNews];
+			const spreadedExistingNews = clonedExistingNews
+				.map((news) =>
+					centralizeNewsProperties(news, news.newsSourceId, source),
+				)
+				.reverse()
+				.slice(0, limit);
+
 			return res.status(200).json({
 				message: `Request limit reached for source: ${source}`,
-				data: existingNews
-					.map((news) =>
-						centralizeNewsProperties(news, news.newsSourceId, source),
-					)
-					.reverse()
-					.slice(0, limit),
+				data: spreadedExistingNews,
 			});
 		}
 
@@ -180,9 +208,12 @@ const main = ({ app, prisma }) => {
 				}
 			}
 
+			const allNews = [...newsData, ...existingNews];
+			const limitedNews = allNews.slice(0, limit).reverse();
+
 			return res.status(200).json({
 				message: "News obtained and saved successfully.",
-				data: existingNews.concat(newsData).reverse().slice(0, limit),
+				data: limitedNews,
 			});
 		} catch (error) {
 			console.error(error, "DATA");

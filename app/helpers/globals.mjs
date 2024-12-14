@@ -238,3 +238,7 @@ export const formatFileName = (fileName) => {
 		.trim()
 		.replace(/\s+/g, "_");
 };
+
+export const formatBucketName = (fileName) => {
+	return fileName.split("_").join(" ").split(".")[0];
+};

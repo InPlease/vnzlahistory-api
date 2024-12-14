@@ -87,7 +87,6 @@ export async function uploadVideo(bucketId, folderPath, videoName, videoPath) {
 		};
 	}
 }
-
 /**
  * @why Right now in the B2 documentation we don't have a quick way to delete
  * a file with all its versins, we are force to make it using loops
