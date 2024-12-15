@@ -220,6 +220,60 @@ const main = ({ app, prisma }) => {
 			return res.status(500).json({ error: "Error retrieving news." });
 		}
 	});
+
+	app.get("/historical", async (req, res) => {
+		try {
+			const folders = await prisma.historyFolder.findMany({
+				include: {
+					files: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
+				},
+			});
+			res.status(200).json({
+				message: "Folders were collected successfully",
+				folders,
+			});
+		} catch (error) {
+			console.error(error);
+			res
+				.status(500)
+				.json({ error: "Error trying to get the historical folder" });
+		}
+	});
+
+	app.get("/historical/files", async (req, res) => {
+		const id = req.query.id;
+
+		if (!id) {
+			return res
+				.status(400)
+				.json({ error: "We are missing id property in body." });
+		}
+
+		try {
+			const file = await prisma.file.findUnique({
+				where: { id },
+			});
+
+			if (!file) {
+				return res.status(404).json({ error: "File was not found" });
+			}
+
+			res.status(200).json({
+				message: "File were collected successfully",
+				file,
+			});
+		} catch (error) {
+			console.error(error);
+			res
+				.status(500)
+				.json({ error: "Error trying to get the historical file" });
+		}
+	});
 };
 
 export default main;

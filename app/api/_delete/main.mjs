@@ -86,5 +86,49 @@ const main = ({ app, prisma }) => {
 			return res.status(500).json({ error: "Internal server error" });
 		}
 	});
+
+	app.delete("/folders/:id", async (req, res) => {
+		const { id } = req.params;
+
+		if (!id) {
+			return res
+				.status(400)
+				.json({ error: "We are missing id property in body." });
+		}
+
+		try {
+			const deletedFolder = await prisma.historyFolder.delete({
+				where: { id },
+			});
+			res
+				.status(200)
+				.json({ message: "Carpeta eliminada correctamente.", deletedFolder });
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({ error: "Error al eliminar la carpeta." });
+		}
+	});
+
+	app.delete("/files/:id", async (req, res) => {
+		const { id } = req.params;
+
+		if (!id) {
+			return res
+				.status(400)
+				.json({ error: "We are missing id property in body." });
+		}
+
+		try {
+			const deletedFile = await prisma.file.delete({
+				where: { id },
+			});
+			res
+				.status(200)
+				.json({ message: "Archivo eliminado correctamente.", deletedFile });
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({ error: "Error al eliminar el archivo." });
+		}
+	});
 };
 export default main;

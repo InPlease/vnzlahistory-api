@@ -218,6 +218,65 @@ const main = ({ app, prisma }) => {
 			}
 		},
 	);
+
+	app.post("/create/historical/folder", async (req, res) => {
+		const { name } = req.body;
+
+		if (!name) {
+			return res.status(404).json({
+				error: "We are missing a parameter, pelase check for folder_name",
+			});
+		}
+
+		try {
+			const folder = await prisma.historyFolder.create({
+				data: {
+					type: "folder",
+					name,
+				},
+			});
+			res.status(201).json(folder);
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({
+				error: "Error, there was an issue trying to create a historical folder",
+			});
+		}
+	});
+
+	app.post("/create/historical/file", async (req, res) => {
+		const { name, content, folderId } = req.body;
+
+		if (!name || !folderId) {
+			return res.status(404).json({
+				error:
+					"We are missing a parameter, please check for name, content or folderIs.",
+			});
+		}
+
+		try {
+			const folder = await prisma.historyFolder.findUnique({
+				where: { id: folderId },
+			});
+
+			if (!folder) {
+				return res.status(404).json({ error: "Folder was not found" });
+			}
+
+			const file = await prisma.file.create({
+				data: {
+					type: "file",
+					name,
+					content,
+					folderId,
+				},
+			});
+			res.status(201).json(file);
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({ error: "Error creating the historical file" });
+		}
+	});
 };
 
 export default main;
