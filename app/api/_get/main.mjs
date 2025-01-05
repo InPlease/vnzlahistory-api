@@ -1,3 +1,6 @@
+// Dependencies
+import { MeiliSearch } from "meilisearch";
+
 // Utils
 import {
 	canMakeRequest,
@@ -33,7 +36,7 @@ const main = ({ app, prisma }) => {
 				skip: skip,
 				take: limit,
 			});
-			console.log("1");
+
 			const videoListWithUrls = await Promise.all(
 				videoList.map(async (video) => {
 					const transformName = video.bucket_file_name
@@ -47,11 +50,11 @@ const main = ({ app, prisma }) => {
 					};
 				}),
 			);
-			console.log("2");
+
 			const totalPages = Math.ceil(totalVideos / limit);
-			console.log("3");
+
 			res.status(200).json({
-				videos: videoListWithUrls,
+				videos: videoListWithUrls.reverse(),
 				pagination: {
 					currentPage: page,
 					totalPages: totalPages,
@@ -229,6 +232,7 @@ const main = ({ app, prisma }) => {
 						select: {
 							id: true,
 							name: true,
+							type: true,
 						},
 					},
 				},
@@ -246,32 +250,133 @@ const main = ({ app, prisma }) => {
 	});
 
 	app.get("/historical/files", async (req, res) => {
-		const id = req.query.id;
+		const { id, type } = req.query;
 
 		if (!id) {
 			return res
 				.status(400)
-				.json({ error: "We are missing id property in body." });
+				.json({ error: "Missing 'id' parameter in the query." });
+		}
+
+		const validTypes = ["file", "folder"];
+		if (type && !validTypes.includes(type.toLowerCase())) {
+			return res.status(400).json({
+				error: `Invalid type. Valid types are: ${validTypes.join(", ")}.`,
+			});
 		}
 
 		try {
+			if (type === "folder") {
+				const folder = await prisma.historyFolder.findUnique({
+					where: { id },
+				});
+
+				if (!folder) {
+					return res.status(404).json({ error: "Folder not found." });
+				}
+
+				return res.status(200).json({
+					message: "Folder retrieved successfully.",
+					folder,
+				});
+			}
+
 			const file = await prisma.file.findUnique({
 				where: { id },
 			});
 
 			if (!file) {
-				return res.status(404).json({ error: "File was not found" });
+				return res.status(404).json({ error: "File not found." });
 			}
 
-			res.status(200).json({
-				message: "File were collected successfully",
+			return res.status(200).json({
+				message: "File retrieved successfully.",
 				file,
 			});
 		} catch (error) {
-			console.error(error);
-			res
-				.status(500)
-				.json({ error: "Error trying to get the historical file" });
+			console.error("Error retrieving historical file:", error);
+			return res.status(500).json({
+				error: "Internal server error while retrieving the historical file.",
+			});
+		}
+	});
+
+	app.get("/search", async (req, res) => {
+		const host = process.env.MILLI_HOST_RAILWAY;
+		const apiKey = process.env.MILLI_HOST_RAILWAY_API_KEY;
+
+		const q = req.query.q || "";
+		const lang = req.query.lang || "en";
+
+		const indexNames = ["heroes", "battles"];
+
+		const client = new MeiliSearch({
+			host: host,
+			apiKey: apiKey,
+		});
+
+		let searchResults = [];
+
+		try {
+			for (const indexName of indexNames) {
+				const index = client.index(indexName);
+
+				let results;
+				if (lang === "es") {
+					results = await index.search(q, {
+						attributesToRetrieve: [
+							"id",
+							"birth",
+							"title_es",
+							"description_es",
+							"tags",
+							"related_battles",
+							"biography",
+							"achievements",
+							"related_battles",
+						],
+					});
+				} else {
+					results = await index.search(q, {
+						attributesToRetrieve: [
+							"id",
+							"birth",
+							"title_es",
+							"description_es",
+							"tags",
+							"related_battles",
+							"biography",
+							"achievements",
+							"related_battles",
+						],
+					});
+				}
+
+				searchResults = [...searchResults, ...results.hits];
+			}
+
+			if (searchResults.length > 0) {
+				res.status(200).json({
+					success: true,
+					message: "Results found",
+					results: searchResults,
+					total: searchResults.length,
+				});
+			} else {
+				res.status(200).json({
+					success: true,
+					message: "No documents found",
+					results: [],
+					total: 0,
+				});
+			}
+		} catch (error) {
+			console.error("Error performing search:", error);
+			res.status(500).json({
+				success: false,
+				message: "Error performing search",
+				error: error.message,
+			});
 		}
 	});
 };

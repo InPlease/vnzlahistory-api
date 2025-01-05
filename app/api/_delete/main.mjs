@@ -1,3 +1,6 @@
+// Dependencies
+import { MeiliSearch } from "meilisearch";
+
 // Helpers
 import { deleteAllFileVersions } from "../../helpers/blackblaze.mjs";
 
@@ -128,6 +131,50 @@ const main = ({ app, prisma }) => {
 		} catch (error) {
 			console.error(error);
 			res.status(500).json({ error: "Error al eliminar el archivo." });
+		}
+	});
+
+	app.delete("/search/deleteAll", async (req, res) => {
+		const host = process.env.MILLI_HOST_RAILWAY;
+		const apiKey = process.env.MILLI_HOST_RAILWAY_API_KEY;
+		const indexName = req.query.indexName;
+
+		if (!indexName) {
+			return res.status(400).json({
+				success: false,
+				message: "Index name is required",
+			});
+		}
+
+		const client = new MeiliSearch({
+			host: host,
+			apiKey: apiKey,
+		});
+
+		const index = client.index(indexName);
+
+		try {
+			// Primero eliminar todos los documentos del índice
+			const deleteDocsResponse = await index.deleteAllDocuments();
+
+			// Luego eliminar el índice completo
+			const deleteIndexResponse = await client.deleteIndex(indexName);
+
+			res.status(200).json({
+				success: true,
+				message: `All documents and index ${indexName} have been deleted`,
+				data: {
+					deleteDocumentsResponse: deleteDocsResponse,
+					deleteIndexResponse: deleteIndexResponse,
+				},
+			});
+		} catch (error) {
+			console.error("Error deleting documents and index:", error);
+			res.status(500).json({
+				success: false,
+				message: "Error deleting documents and index",
+				error: error.message,
+			});
 		}
 	});
 };

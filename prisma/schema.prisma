@@ -101,10 +101,11 @@ model Report {
 }
 
 model HistoryFolder {
-  id    String @id @default(uuid())
-  name  String @unique
-  type  String
-  files File[]
+  id      String @id @default(uuid())
+  name    String @unique
+  type    String
+  content String
+  files   File[]
 }
 
 model File {

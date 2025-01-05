@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import multer from "multer";
 import path from "node:path";
+import { MeiliSearch } from "meilisearch";
 
 // Helpers
 import { uploadVideo, uploadImage } from "../../helpers/blackblaze.mjs";
@@ -232,6 +233,7 @@ const main = ({ app, prisma }) => {
 			const folder = await prisma.historyFolder.create({
 				data: {
 					type: "folder",
+					content: "",
 					name,
 				},
 			});
@@ -275,6 +277,45 @@ const main = ({ app, prisma }) => {
 		} catch (error) {
 			console.error(error);
 			res.status(500).json({ error: "Error creating the historical file" });
+		}
+	});
+
+	app.post("/search/add", async (req, res) => {
+		const host = process.env.MILLI_HOST_RAILWAY;
+		const apiKey = process.env.MILLI_HOST_RAILWAY_API_KEY;
+
+		const indexName = req.body.indexName;
+		const documents = req.body.documents;
+
+		if (!indexName || !documents) {
+			return res.status(400).json({
+				success: false,
+				message: "Index name and documents are required",
+			});
+		}
+
+		const client = new MeiliSearch({
+			host: host,
+			apiKey: apiKey,
+		});
+
+		const index = client.index(indexName);
+
+		try {
+			const response = await index.addDocuments(documents);
+
+			res.status(200).json({
+				success: true,
+				message: "Documents added successfully",
+				data: response,
+			});
+		} catch (error) {
+			console.error("Error adding documents:", error);
+			res.status(500).json({
+				success: false,
+				message: "Error adding documents",
+				error: error.message,
+			});
 		}
 	});
 };
