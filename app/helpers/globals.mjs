@@ -201,37 +201,6 @@ export const centralizeNewsProperties = (
 	}
 };
 
-// This is FRONTEND
-export const organizeNewsData = (layout, news) => {
-	const organizedLayout = { ...layout };
-	const sections = organizedLayout.components.sections;
-
-	for (const sectionKey of Object.keys(sections)) {
-		const components = sections[sectionKey];
-
-		for (const component of components) {
-			if (component?.component_data) {
-				const { limit, limitPerPage, component_type } =
-					component.component_data;
-
-				const currentLimit =
-					component_type === "single_news" ? limitPerPage : limit;
-
-				if (currentLimit) {
-					const assignedNews = news.slice(0, currentLimit);
-
-					component.component_data.news_data =
-						assignedNews.length > 0 ? assignedNews : "No news available";
-
-					news.splice(0, assignedNews.length);
-				}
-			}
-		}
-	}
-
-	return organizedLayout;
-};
-
 export const formatFileName = (fileName) => {
 	return fileName
 		.replace(/[^a-zA-Z0-9\s]/g, "")

@@ -100,21 +100,15 @@ model Report {
   reportType String
 }
 
-model HistoryFolder {
-  id      String @id @default(uuid())
-  name    String @unique
-  type    String
-  content String
-  files   File[]
+model History {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model File {
-  id        String        @id @default(uuid())
-  type      String
-  name      String        @unique
-  content   String
-  folderId  String
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  folder    HistoryFolder @relation(fields: [folderId], references: [id])
+model PageSettingConfig {
+  id      Int    @id @default(autoincrement())
+  type    Int    @unique
+  configs String
 }

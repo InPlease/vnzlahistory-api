@@ -304,6 +304,12 @@ const main = ({ app, prisma }) => {
 		try {
 			const response = await index.addDocuments(documents);
 
+			await prisma.history.create({
+				data: {
+					content: "",
+				},
+			});
+
 			res.status(200).json({
 				success: true,
 				message: "Documents added successfully",
@@ -315,6 +321,83 @@ const main = ({ app, prisma }) => {
 				success: false,
 				message: "Error adding documents",
 				error: error.message,
+			});
+		}
+	});
+
+	app.post("/create/config", async (req, res) => {
+		/**
+		 * Just to let you know this is the first one where I create a isUpdate property to update
+		 * the config if needed, usually we create edits inside of the _put, but didn't want to
+		 * create another endpoint for it.
+		 *
+		 * Type (Number)
+		 *
+		 * 1 - Header Ads Left
+		 * 2 - Header Ads Right
+		 *
+		 * Coming soon
+		 */
+		const { type, url, section, isUpdate } = req.body;
+
+		if (typeof type !== "number") {
+			return res.status(500).json({
+				error: "Error, the type should be a valid number",
+			});
+		}
+
+		if (!type || !url || !section) {
+			return res.status(500).json({
+				error: "Error, we are missing some fields in body",
+			});
+		}
+
+		try {
+			const existType = await prisma.pageSettingConfig.findUnique({
+				where: {
+					type,
+				},
+			});
+
+			if (existType && !isUpdate) {
+				return res.status(403).json({
+					error:
+						"This setting already exists. If you want to update it, please send isUpdate (true) as a body property.",
+				});
+			}
+
+			if (existType && isUpdate) {
+				const updatedConfig = await prisma.pageSettingConfig.update({
+					where: {
+						type,
+					},
+					data: {
+						configs: JSON.stringify({ url, section }),
+					},
+				});
+
+				return res.status(200).json({
+					message: "Configuration updated successfully",
+					data: updatedConfig,
+				});
+			}
+
+			const newConfig = await prisma.pageSettingConfig.create({
+				data: {
+					type,
+					configs: JSON.stringify({ url, section }),
+				},
+			});
+
+			return res.status(201).json({
+				message: "Configuration created successfully",
+				data: newConfig,
+			});
+		} catch (error) {
+			console.error("Error creating or updating configuration:", error);
+			return res.status(500).json({
+				error:
+					"An error occurred while creating or updating the configuration.",
 			});
 		}
 	});

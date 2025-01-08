@@ -63,7 +63,6 @@ const main = ({ app, prisma }) => {
 				},
 			});
 		} catch (error) {
-			console.log(error);
 			res.status(500).send({
 				error: "An unexpected error occurred while fetching the video list",
 				errorCode: error.code,
@@ -308,7 +307,7 @@ const main = ({ app, prisma }) => {
 		const q = req.query.q || "";
 		const lang = req.query.lang || "en";
 
-		const indexNames = ["heroes", "battles"];
+		const indexNames = ["heroes"];
 
 		const client = new MeiliSearch({
 			host: host,
@@ -316,6 +315,15 @@ const main = ({ app, prisma }) => {
 		});
 
 		let searchResults = [];
+
+		if (!q) {
+			return res.status(500).json({
+				success: false,
+				message: "Results not found",
+				results: [],
+				total: 0,
+			});
+		}
 
 		try {
 			for (const indexName of indexNames) {
@@ -326,28 +334,26 @@ const main = ({ app, prisma }) => {
 					results = await index.search(q, {
 						attributesToRetrieve: [
 							"id",
-							"birth",
-							"title_es",
-							"description_es",
-							"tags",
-							"related_battles",
-							"biography",
-							"achievements",
-							"related_battles",
+							"name",
+							"death",
+							"spouse",
+							"images",
+							"battles",
+							"dateBirth",
+							"presidencies",
 						],
 					});
 				} else {
 					results = await index.search(q, {
 						attributesToRetrieve: [
 							"id",
-							"birth",
-							"title_es",
-							"description_es",
-							"tags",
-							"related_battles",
-							"biography",
-							"achievements",
-							"related_battles",
+							"name",
+							"death",
+							"spouse",
+							"images",
+							"battles",
+							"dateBirth",
+							"presidencies",
 						],
 					});
 				}
@@ -376,6 +382,33 @@ const main = ({ app, prisma }) => {
 				success: false,
 				message: "Error performing search",
 				error: error.message,
+			});
+		}
+	});
+
+	app.get("/page/setting", async (req, res) => {
+		const type = req.query.type;
+
+		if (typeof type !== "number") {
+			res.status(500).json({
+				message: "Error, type should a number",
+			});
+		}
+		if (type === numm || type === "undefined") {
+			res.status(500).json({
+				message: "Error, we are missing a field",
+			});
+		}
+
+		const setting = await prisma.pageSettingConfig.findUnique({
+			where: {
+				type,
+			},
+		});
+
+		if (!setting) {
+			res.status(404).json({
+				message: "Record does not exist in our database",
 			});
 		}
 	});

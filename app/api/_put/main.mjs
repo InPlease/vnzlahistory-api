@@ -1,3 +1,6 @@
+// Dependencies
+import { MeiliSearch } from "meilisearch";
+
 // Helpers
 import { cleanedPayload } from "../../helpers/globals.mjs";
 
@@ -130,6 +133,46 @@ const main = ({ app, prisma }) => {
 				error: "An unexpected error occurred while editing the video.",
 				errorCode: error.code || error.message,
 			});
+		}
+	});
+
+	app.put("/search/edit", async (req, res) => {
+		const host = process.env.MILLI_HOST_RAILWAY;
+		const apiKey = process.env.MILLI_HOST_RAILWAY_API_KEY;
+
+		const client = new MeiliSearch({
+			host: host,
+			apiKey: apiKey,
+		});
+
+		const { indexName, id } = req.query;
+		const { field, value } = req.body;
+
+		if (!field || typeof value === "undefined") {
+			return res.status(400).json({ error: "Field and value are required." });
+		}
+
+		try {
+			const index = client.index(indexName);
+
+			const document = await index.getDocument(id);
+
+			if (!document) {
+				return res.status(404).json({ error: "Document not found." });
+			}
+
+			document[field] = value;
+
+			const updateResponse = await index.addDocuments([document]);
+
+			res.json({
+				message: "Field updated successfully.",
+				updateResponse,
+				updatedDocument: document,
+			});
+		} catch (error) {
+			console.error("Error updating field:", error);
+			res.status(500).json({ error: "Failed to update field." });
 		}
 	});
 };
