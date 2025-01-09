@@ -84,7 +84,24 @@ const main = ({ app, prisma }) => {
 		]),
 		async (req, res) => {
 			try {
-				const { bucket_file_name, description, video_tags } = req.body;
+				const host = process.env.MILLI_HOST_RAILWAY;
+				const apiKey = process.env.MILLI_HOST_RAILWAY_API_KEY;
+
+				const { bucket_file_name, description, video_tags, indexName } =
+					req.body;
+
+				if (!indexName) {
+					return res.status(400).json({
+						success: false,
+						message: "Index name is required",
+					});
+				}
+
+				const client = new MeiliSearch({
+					host: host,
+					apiKey: apiKey,
+				});
+
 				const videoFile = req.files?.videoFile?.[0];
 				const thumbnailFile = req.files?.thumbnail?.[0];
 
@@ -155,7 +172,7 @@ const main = ({ app, prisma }) => {
 						});
 					} else {
 						console.warn({
-							message: "Skip the the thumbnail creating since it already exist",
+							message: "Skipping thumbnail creation since it already exists",
 							status: 200,
 						});
 					}
@@ -184,15 +201,40 @@ const main = ({ app, prisma }) => {
 					},
 				});
 
-				const response = {
-					...newVideo,
-					video_tags,
-				};
+				const documents = [
+					{
+						id: newVideo.id,
+						images: thumbnailUrl ? [thumbnailUrl] : [],
+						name: urlFile,
+						description,
+						createdAt: newVideo.createdAt.toISOString(),
+						updatedAt: newVideo.createdAt.toISOString(),
+						tags: getTagsNames,
+						views: 0,
+					},
+				];
+
+				const index = client.index(indexName);
+
+				try {
+					const meiliResponse = await index.addDocuments(documents);
+					console.log("MeiliSearch Response:", meiliResponse);
+				} catch (meiliError) {
+					console.error("Error adding documents to MeiliSearch:", meiliError);
+					return res.status(500).json({
+						success: false,
+						message: "Failed to add video to search index",
+						error: meiliError.message,
+					});
+				}
 
 				res.status(201).json({
 					message: "Video was uploaded successfully, enjoy!",
 					status: 201,
-					videoInfo: response,
+					videoInfo: {
+						...newVideo,
+						video_tags,
+					},
 					is_video_received: true,
 				});
 			} catch (error) {
@@ -286,6 +328,7 @@ const main = ({ app, prisma }) => {
 
 		const indexName = req.body.indexName;
 		const documents = req.body.documents;
+		const type = req.body.type;
 
 		if (!indexName || !documents) {
 			return res.status(400).json({
@@ -307,6 +350,7 @@ const main = ({ app, prisma }) => {
 			await prisma.history.create({
 				data: {
 					content: "",
+					type,
 				},
 			});
 

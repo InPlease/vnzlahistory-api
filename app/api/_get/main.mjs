@@ -224,79 +224,24 @@ const main = ({ app, prisma }) => {
 	});
 
 	app.get("/historical", async (req, res) => {
+		const id = +req.query.id;
+
 		try {
-			const folders = await prisma.historyFolder.findMany({
-				include: {
-					files: {
-						select: {
-							id: true,
-							name: true,
-							type: true,
-						},
-					},
+			const history = await prisma.history.findUnique({
+				where: {
+					id,
 				},
 			});
+
 			res.status(200).json({
 				message: "Folders were collected successfully",
-				folders,
+				history,
 			});
 		} catch (error) {
 			console.error(error);
 			res
 				.status(500)
 				.json({ error: "Error trying to get the historical folder" });
-		}
-	});
-
-	app.get("/historical/files", async (req, res) => {
-		const { id, type } = req.query;
-
-		if (!id) {
-			return res
-				.status(400)
-				.json({ error: "Missing 'id' parameter in the query." });
-		}
-
-		const validTypes = ["file", "folder"];
-		if (type && !validTypes.includes(type.toLowerCase())) {
-			return res.status(400).json({
-				error: `Invalid type. Valid types are: ${validTypes.join(", ")}.`,
-			});
-		}
-
-		try {
-			if (type === "folder") {
-				const folder = await prisma.historyFolder.findUnique({
-					where: { id },
-				});
-
-				if (!folder) {
-					return res.status(404).json({ error: "Folder not found." });
-				}
-
-				return res.status(200).json({
-					message: "Folder retrieved successfully.",
-					folder,
-				});
-			}
-
-			const file = await prisma.file.findUnique({
-				where: { id },
-			});
-
-			if (!file) {
-				return res.status(404).json({ error: "File not found." });
-			}
-
-			return res.status(200).json({
-				message: "File retrieved successfully.",
-				file,
-			});
-		} catch (error) {
-			console.error("Error retrieving historical file:", error);
-			return res.status(500).json({
-				error: "Internal server error while retrieving the historical file.",
-			});
 		}
 	});
 
@@ -307,7 +252,7 @@ const main = ({ app, prisma }) => {
 		const q = req.query.q || "";
 		const lang = req.query.lang || "en";
 
-		const indexNames = ["heroes"];
+		const indexNames = ["heroes", "videos"];
 
 		const client = new MeiliSearch({
 			host: host,
@@ -329,36 +274,26 @@ const main = ({ app, prisma }) => {
 			for (const indexName of indexNames) {
 				const index = client.index(indexName);
 
-				let results;
-				if (lang === "es") {
-					results = await index.search(q, {
-						attributesToRetrieve: [
-							"id",
-							"name",
-							"death",
-							"spouse",
-							"images",
-							"battles",
-							"dateBirth",
-							"presidencies",
-						],
-					});
-				} else {
-					results = await index.search(q, {
-						attributesToRetrieve: [
-							"id",
-							"name",
-							"death",
-							"spouse",
-							"images",
-							"battles",
-							"dateBirth",
-							"presidencies",
-						],
-					});
-				}
+				const results = await index.search(q, {
+					attributesToRetrieve: [
+						"id",
+						"name",
+						"death",
+						"spouse",
+						"images",
+						"battles",
+						"dateBirth",
+						"description",
+						"presidencies",
+					],
+				});
 
-				searchResults = [...searchResults, ...results.hits];
+				const resultsWithIndex = results.hits.map((hit) => ({
+					...hit,
+					indexName,
+				}));
+
+				searchResults = [...searchResults, ...resultsWithIndex];
 			}
 
 			if (searchResults.length > 0) {

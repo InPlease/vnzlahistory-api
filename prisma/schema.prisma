@@ -20,12 +20,11 @@ model Video {
   is_reported                      Boolean
   report_type                      String?
   report_team_comments             String?
-  community_clarification_response CommunityComments[]
   tags                             String
   views                            Int
-
-  thumbnailUrl String? @unique
-  thumbnail    Image?  @relation(fields: [thumbnailUrl], references: [url])
+  thumbnailUrl                     String?             @unique
+  community_clarification_response CommunityComments[]
+  thumbnail                        Image?              @relation(fields: [thumbnailUrl], references: [url])
 }
 
 model Image {
@@ -37,8 +36,7 @@ model Image {
   height    Int?
   format    String?
   size      Int?
-
-  Video Video?
+  Video     Video?
 }
 
 model RateLimit {
@@ -102,6 +100,7 @@ model Report {
 
 model History {
   id        Int      @id @default(autoincrement())
+  type      String
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
