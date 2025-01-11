@@ -322,14 +322,14 @@ const main = ({ app, prisma }) => {
 	});
 
 	app.get("/page/setting", async (req, res) => {
-		const type = req.query.type;
+		const type = Number(req.query.type);
 
 		if (typeof type !== "number") {
 			res.status(500).json({
 				message: "Error, type should a number",
 			});
 		}
-		if (type === numm || type === "undefined") {
+		if (type === null || type === undefined) {
 			res.status(500).json({
 				message: "Error, we are missing a field",
 			});
@@ -346,6 +346,10 @@ const main = ({ app, prisma }) => {
 				message: "Record does not exist in our database",
 			});
 		}
+		res.status(200).json({
+			message: `Current configuration for type ${type}`,
+			setting,
+		});
 	});
 };
 
