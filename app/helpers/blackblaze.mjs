@@ -7,15 +7,19 @@ export const b2 = new B2({
 	applicationKey: process.env.APPLICATION_KEY,
 });
 
-export async function GetBucket() {
+export async function generateDownloadUrl(fileName) {
 	try {
 		await b2.authorize();
-		const response = await b2.getBucket({
-			bucketName: process.env.BUCKET_NAME,
+
+		const response = await b2.getDownloadAuthorization({
+			bucketId: process.env.BUCKET_VIDEOS_ID,
+			fileNamePrefix: fileName,
+			validDurationInSeconds: 3600,
 		});
-		console.log(response.data);
-	} catch (err) {
-		console.log("Error getting bucket:", err);
+
+		return `${process.env.BLACKBLAZE_BASE_URL}/BUCKET_NAME/${fileName}?Authorization=${response.data.authorizationToken}`;
+	} catch (error) {
+		console.error("Error al generar URL de descarga:", error);
 	}
 }
 
@@ -28,14 +32,14 @@ export async function GetBucketFiles() {
 
 		do {
 			const response = await b2.listFileNames({
-				bucketId: process.env.BUCKET_ID,
+				bucketId: process.env.BUCKET_VIDEOS_ID,
 				startFileName: nextFileName,
 				maxFileCount: 20,
 			});
 
 			const files = response.data.files.map((file) => ({
 				fileName: file.fileName,
-				url: `${process.env.BLACK_BASE_URL}/${process.env.BUCKET_NAME}/${encodeURIComponent(file.fileName)}`,
+				url: `${process.env.BLACK_BASE_URL}/BUCKET_NAME/${encodeURIComponent(file.fileName)}`,
 			}));
 
 			videoFiles = [...videoFiles, ...files];
@@ -50,31 +54,25 @@ export async function GetBucketFiles() {
 	}
 }
 
-export async function authenticate() {
-	try {
-		await b2.authorize();
-		console.log("Successfully authenticated with Backblaze B2");
-	} catch (err) {
-		console.error("Error authenticating with Backblaze B2:", err);
-	}
-}
-
 /**
  * @param {string} bucketId
  * @param {string} videoName
  * @param {string} videoPath
  */
-export async function uploadVideo(bucketId, videoName, videoPath) {
+export async function uploadVideo(bucketId, folderPath, videoName, videoPath) {
 	try {
 		await b2.authorize();
+
 		const uploadUrlResponse = await b2.getUploadUrl({ bucketId });
 
 		const videoBuffer = await fs.readFile(videoPath);
 
+		const filePathInBucket = `${folderPath}/${videoName}`;
+
 		await b2.uploadFile({
 			uploadUrl: uploadUrlResponse.data.uploadUrl,
 			uploadAuthToken: uploadUrlResponse.data.authorizationToken,
-			fileName: videoName,
+			fileName: filePathInBucket,
 			data: videoBuffer,
 		});
 
@@ -85,11 +83,10 @@ export async function uploadVideo(bucketId, videoName, videoPath) {
 	} catch (err) {
 		return {
 			error_message: "Something went wrong; upload was not successful.",
-			status: err.response.status,
+			status: err.response?.status || 500,
 		};
 	}
 }
-
 /**
  * @why Right now in the B2 documentation we don't have a quick way to delete
  * a file with all its versins, we are force to make it using loops
@@ -136,10 +133,34 @@ export async function deleteAllFileVersions(bucketId, fileName) {
 			message: "Video was deleted successfully",
 		};
 	} catch (err) {
-		console.log(err);
 		return {
 			error_message: "Something went wrong; deletion was not successful.",
 			status: err.response.status,
 		};
+	}
+}
+
+export async function uploadImage(bucketId, folderPath, fileName, filePath) {
+	try {
+		await b2.authorize();
+
+		const { data: uploadData } = await b2.getUploadUrl({ bucketId });
+
+		const fileBuffer = await fs.readFile(filePath);
+
+		const filePathInBucket = `${folderPath}/${fileName}`;
+
+		const { data: uploadResponse } = await b2.uploadFile({
+			uploadUrl: uploadData.uploadUrl,
+			uploadAuthToken: uploadData.authorizationToken,
+			fileName: filePathInBucket,
+			data: fileBuffer,
+		});
+
+		console.log("File uploaded successfully:", uploadResponse);
+		return uploadResponse;
+	} catch (error) {
+		console.error("Error uploading image:", error.message);
+		throw error;
 	}
 }

@@ -1,3 +1,6 @@
+// Dependencies
+import { MeiliSearch } from "meilisearch";
+
 // Helpers
 import { deleteAllFileVersions } from "../../helpers/blackblaze.mjs";
 
@@ -42,7 +45,7 @@ const main = ({ app, prisma }) => {
 			}
 
 			const deletionResponse = await deleteAllFileVersions(
-				process.env.BUCKET_ID,
+				process.env.BUCKET_VIDEOS_ID,
 				file_name,
 			);
 
@@ -84,6 +87,94 @@ const main = ({ app, prisma }) => {
 		} catch (error) {
 			console.error("Error deleting news item:", error);
 			return res.status(500).json({ error: "Internal server error" });
+		}
+	});
+
+	app.delete("/folders/:id", async (req, res) => {
+		const { id } = req.params;
+
+		if (!id) {
+			return res
+				.status(400)
+				.json({ error: "We are missing id property in body." });
+		}
+
+		try {
+			const deletedFolder = await prisma.historyFolder.delete({
+				where: { id },
+			});
+			res
+				.status(200)
+				.json({ message: "Carpeta eliminada correctamente.", deletedFolder });
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({ error: "Error al eliminar la carpeta." });
+		}
+	});
+
+	app.delete("/files/:id", async (req, res) => {
+		const { id } = req.params;
+
+		if (!id) {
+			return res
+				.status(400)
+				.json({ error: "We are missing id property in body." });
+		}
+
+		try {
+			const deletedFile = await prisma.file.delete({
+				where: { id },
+			});
+			res
+				.status(200)
+				.json({ message: "Archivo eliminado correctamente.", deletedFile });
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({ error: "Error al eliminar el archivo." });
+		}
+	});
+
+	app.delete("/search/deleteAll", async (req, res) => {
+		const host = process.env.MILLI_HOST_RAILWAY;
+		const apiKey = process.env.MILLI_HOST_RAILWAY_API_KEY;
+		const indexName = req.query.indexName;
+
+		if (!indexName) {
+			return res.status(400).json({
+				success: false,
+				message: "Index name is required",
+			});
+		}
+
+		const client = new MeiliSearch({
+			host: host,
+			apiKey: apiKey,
+		});
+
+		const index = client.index(indexName);
+
+		try {
+			// Primero eliminar todos los documentos del índice
+			const deleteDocsResponse = await index.deleteAllDocuments();
+
+			// Luego eliminar el índice completo
+			const deleteIndexResponse = await client.deleteIndex(indexName);
+
+			res.status(200).json({
+				success: true,
+				message: `All documents and index ${indexName} have been deleted`,
+				data: {
+					deleteDocumentsResponse: deleteDocsResponse,
+					deleteIndexResponse: deleteIndexResponse,
+				},
+			});
+		} catch (error) {
+			console.error("Error deleting documents and index:", error);
+			res.status(500).json({
+				success: false,
+				message: "Error deleting documents and index",
+				error: error.message,
+			});
 		}
 	});
 };

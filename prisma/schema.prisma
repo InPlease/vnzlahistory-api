@@ -11,8 +11,8 @@ datasource db {
 model Video {
   id                               Int                 @id @default(autoincrement())
   bucket_file_name                 String              @unique
-  ui_title                         String?
-  url                              String              @unique
+  ui_title                         String?             @unique
+  url                              String
   description                      String
   createdAt                        DateTime            @default(now())
   updatedAt                        DateTime            @updatedAt
@@ -20,8 +20,23 @@ model Video {
   is_reported                      Boolean
   report_type                      String?
   report_team_comments             String?
+  tags                             String
+  views                            Int
+  thumbnailUrl                     String?             @unique
   community_clarification_response CommunityComments[]
-  tags                             VideoTag[]
+  thumbnail                        Image?              @relation(fields: [thumbnailUrl], references: [url])
+}
+
+model Image {
+  url       String   @id @unique
+  altText   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  width     Int?
+  height    Int?
+  format    String?
+  size      Int?
+  Video     Video?
 }
 
 model RateLimit {
@@ -33,7 +48,7 @@ model RateLimit {
   lastReset           DateTime @default(now())
 }
 
-model requestLog {
+model RequestLog {
   id        Int      @id @default(autoincrement())
   source    String
   createdAt DateTime @default(now())
@@ -65,18 +80,8 @@ model News {
 }
 
 model Tag {
-  id     Int        @id @default(autoincrement())
-  name   String     @unique
-  videos VideoTag[]
-}
-
-model VideoTag {
-  videoId Int
-  tagId   Int
-  tag     Tag   @relation(fields: [tagId], references: [id])
-  video   Video @relation(fields: [videoId], references: [id])
-
-  @@id([videoId, tagId])
+  id   Int    @id @default(autoincrement())
+  name String @unique
 }
 
 model CommunityComments {
@@ -91,4 +96,18 @@ model Report {
   name       String @unique
   severity   Int
   reportType String
+}
+
+model History {
+  id        Int      @id @default(autoincrement())
+  type      String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PageSettingConfig {
+  id      Int    @id @default(autoincrement())
+  type    Int    @unique
+  configs String
 }
