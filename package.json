@@ -32,7 +32,8 @@
 		"dotenv-cli": "^7.4.2",
 		"husky": "^9.1.5",
 		"lint-staged": "^15.2.9",
-		"prisma": "^5.19.0"
+		"prisma": "^5.19.0",
+		"wrangler": "^3.101.0"
 	},
 	"lint-staged": {
 		"*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": [

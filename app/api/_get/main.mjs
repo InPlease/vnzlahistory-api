@@ -86,6 +86,7 @@ const main = ({ app, prisma }) => {
 				createdAt: video.createdAt,
 				url: video.url,
 				views: video.views,
+				uiTitle: video.ui_title,
 			});
 		} catch (error) {
 			res.status(500).send({
@@ -348,7 +349,7 @@ const main = ({ app, prisma }) => {
 		}
 		res.status(200).json({
 			message: `Current configuration for type ${type}`,
-			setting,
+			settings: JSON.parse(setting.configs),
 		});
 	});
 };
