@@ -34,10 +34,18 @@ const prisma = new PrismaClient({ adapter });
 const app = express();
 const port = process.env.PORT;
 
+const allowedOrigins = [process.env.UI_URL, process.env.UI_SECOND_URL];
+
 app.use(ratelimitConfigs.generalLimiter);
 app.use(
 	cors({
-		origin: process.env.UI_URL,
+		origin: (origin, callback) => {
+			if (!origin || allowedOrigins.includes(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error("Not allowed by CORS"));
+			}
+		},
 	}),
 );
 app.use(express.json({ limit: "6mb" }));
