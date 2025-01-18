@@ -505,6 +505,80 @@ const main = ({ app, prisma }) => {
 			});
 		}
 	});
+
+	app.post("/video/related", async (req, res) => {
+		const { videoId, relatedVideoIds } = req.body;
+
+		if (
+			!videoId ||
+			!Array.isArray(relatedVideoIds) ||
+			relatedVideoIds.length === 0
+		) {
+			return res.status(400).json({
+				message: "Both videoId and relatedVideoIds array are required",
+			});
+		}
+
+		try {
+			const filteredRelatedVideoIds = relatedVideoIds.filter(
+				(id) => id !== videoId,
+			);
+
+			if (filteredRelatedVideoIds.length === 0) {
+				return res.status(400).json({
+					message: "No valid related videos found after filtering",
+				});
+			}
+
+			const video = await prisma.video.findUnique({ where: { id: videoId } });
+
+			if (!video) {
+				return res.status(404).json({ message: "Video not found" });
+			}
+
+			const existingRelations = await prisma.relatedInfo.findMany({
+				where: {
+					idEntity: videoId,
+					relatedEntityId: {
+						in: filteredRelatedVideoIds,
+					},
+				},
+			});
+
+			const existingRelatedIds = existingRelations.map(
+				(relation) => relation.relatedEntityId,
+			);
+
+			const newRelatedVideoIds = filteredRelatedVideoIds.filter(
+				(id) => !existingRelatedIds.includes(id),
+			);
+
+			if (newRelatedVideoIds.length === 0) {
+				return res.status(200).json({
+					message: "All provided related videos are already linked",
+				});
+			}
+
+			const relatedInfoData = newRelatedVideoIds.map((relatedVideoId) => ({
+				idEntity: videoId,
+				relatedEntityId: relatedVideoId,
+			}));
+
+			const newRelatedInfos = await prisma.relatedInfo.createMany({
+				data: relatedInfoData,
+			});
+
+			return res.status(201).json({
+				message: "Related videos added successfully",
+				data: newRelatedInfos,
+			});
+		} catch (error) {
+			console.error("Error creating related videos:", error);
+			return res.status(500).json({
+				message: "An error occurred while creating the related videos",
+			});
+		}
+	});
 };
 
 export default main;

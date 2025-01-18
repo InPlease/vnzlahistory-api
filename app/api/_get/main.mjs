@@ -79,10 +79,47 @@ const main = ({ app, prisma }) => {
 	app.get("/videos/specific", async (req, res) => {
 		try {
 			const id = Number(req.query.id);
+
 			const video = await prisma.video.findUnique({
 				where: {
 					id,
 				},
+			});
+
+			if (!video) {
+				return res.status(404).json({
+					error: "Video not found",
+				});
+			}
+
+			const relatedInfo = await prisma.relatedInfo.findMany({
+				where: {
+					idEntity: id,
+				},
+			});
+
+			const relatedVideoIds = relatedInfo.map(
+				(relation) => relation.relatedEntityId,
+			);
+			const relatedVideos = await prisma.video.findMany({
+				where: {
+					id: {
+						in: relatedVideoIds,
+					},
+				},
+			});
+
+			const formatRelatedVideos = relatedVideos.map((video) => {
+				return {
+					id: video.id,
+					tags: video.tags.includes(",") ? video.tags.split(",") : video.tags,
+					description: video.description,
+					createdAt: video.createdAt,
+					url: video.url,
+					views: video.views,
+					uiTitle: video.ui_title,
+					thumbnailUrl: video.thumbnailUrl,
+				};
 			});
 
 			res.status(200).json({
@@ -93,6 +130,7 @@ const main = ({ app, prisma }) => {
 				url: video.url,
 				views: video.views,
 				uiTitle: video.ui_title,
+				related: formatRelatedVideos,
 			});
 		} catch (error) {
 			res.status(500).send({

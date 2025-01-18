@@ -21,8 +21,6 @@ model History {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime
-
-  RelatedTo RelatedTo[]
 }
 
 model Image {
@@ -38,21 +36,20 @@ model Image {
 }
 
 model News {
-  id           Int         @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   title        String
   content      String
   author       String?
-  url          String      @unique
+  url          String     @unique
   image        String?
   category     String?
   language     String?
   country      String?
   published_at DateTime
   newsSourceId Int
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime   @default(now())
   updatedAt    DateTime
-  NewsSource   NewsSource  @relation(fields: [newsSourceId], references: [id])
-  RelatedTo    RelatedTo[]
+  NewsSource   NewsSource @relation(fields: [newsSourceId], references: [id])
 }
 
 model NewsSource {
@@ -114,15 +111,15 @@ model Video {
   thumbnailUrl         String?             @unique
   CommunityComments    CommunityComments[]
   Image                Image?              @relation(fields: [thumbnailUrl], references: [url])
-  RelatedTo            RelatedTo[]
+
+  RelatedInfo RelatedInfo[]
 }
 
-model RelatedTo {
-  id        Int     @id @default(autoincrement())
-  newsId    Int
-  videoId   Int
-  historyId Int
-  news      News    @relation(fields: [newsId], references: [id])
-  video     Video   @relation(fields: [videoId], references: [id])
-  history   History @relation(fields: [historyId], references: [id])
+
+model RelatedInfo {
+  id       Int @id @default(autoincrement())
+  idEntity Int
+  relatedEntityId Int
+
+  fkRelatedEntityId Video? @relation(fields: [relatedEntityId], references: [id])
 }
