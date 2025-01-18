@@ -198,6 +198,7 @@ const main = ({ app, prisma }) => {
 						is_reported: false,
 						views: 0,
 						thumbnailUrl,
+						ui_title: bucket_file_name,
 					},
 				});
 
@@ -217,10 +218,8 @@ const main = ({ app, prisma }) => {
 				const index = client.index(indexName);
 
 				try {
-					const meiliResponse = await index.addDocuments(documents);
-					console.log("MeiliSearch Response:", meiliResponse);
+					await index.addDocuments(documents);
 				} catch (meiliError) {
-					console.error("Error adding documents to MeiliSearch:", meiliError);
 					return res.status(500).json({
 						success: false,
 						message: "Failed to add video to search index",
@@ -257,6 +256,67 @@ const main = ({ app, prisma }) => {
 					} catch (err) {
 						console.error("Error deleting temp thumbnail file:", err);
 					}
+				}
+			}
+		},
+	);
+
+	app.post(
+		"/create/image",
+		upload.fields([{ name: "historyImage", maxCount: 1 }]),
+		async ({ req }) => {
+			const { description, altText } = req.body;
+			const historyImages = req.files?.history_images?.[0];
+
+			const client = new MeiliSearch({
+				host: host,
+				apiKey: apiKey,
+			});
+
+			const index = client.index(indexName);
+
+			let historyImagesUrl = null;
+
+			const newVideo = await prisma.Image.create({
+				data: {
+					url: `${process.env.BLACKBLAZE_BASE_URL}/videos/${urlFile}`,
+					description,
+					altText,
+				},
+			});
+
+			const historyImageDocument = [
+				{
+					id: newVideo.id,
+					url: history_images,
+					description,
+					altText,
+				},
+			];
+
+			if (historyImages) {
+				const thumbnailFormattedName = formatFileName(
+					`history_images-${bucket_file_name}`,
+				);
+				const historyImageName = `${thumbnailFormattedName}.${thumbnailFile.filename.split(".")[1]}`;
+
+				historyImagesUrl = `${process.env.BLACKBLAZE_BASE_URL}/history_images/${historyImageName}`;
+
+				const history_image = await prisma.image.findUnique({
+					where: {
+						url: historyImagesUrl,
+					},
+				});
+
+				if (!history_image) {
+					const response = await index.addDocuments(documents);
+
+					await uploadImage(
+						process.env.BUCKET_ID,
+						"historyImage",
+						historyImageName,
+						historyImages.path,
+					);
 				}
 			}
 		},

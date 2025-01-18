@@ -31,10 +31,16 @@ const main = ({ app, prisma }) => {
 			const limit = Number.parseInt(req.query.limit) || 1;
 			const skip = (page - 1) * limit;
 
-			const totalVideos = await prisma.video.count();
+			const isRecommended = req.query.isRecommended;
+
+			const totalVideos = isRecommended
+				? await prisma.video.count({ where: { isRecommended: true } })
+				: await prisma.video.count();
+
 			const videoList = await prisma.video.findMany({
 				skip: skip,
 				take: limit,
+				where: isRecommended ? { isRecommended: true } : {},
 			});
 
 			const videoListWithUrls = await Promise.all(

@@ -8,35 +8,65 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Video {
-  id                               Int                 @id @default(autoincrement())
-  bucket_file_name                 String              @unique
-  ui_title                         String?             @unique
-  url                              String
-  description                      String
-  createdAt                        DateTime            @default(now())
-  updatedAt                        DateTime            @updatedAt
-  is_verified                      Boolean
-  is_reported                      Boolean
-  report_type                      String?
-  report_team_comments             String?
-  tags                             String
-  views                            Int
-  thumbnailUrl                     String?             @unique
-  community_clarification_response CommunityComments[]
-  thumbnail                        Image?              @relation(fields: [thumbnailUrl], references: [url])
+model CommunityComments {
+  id       Int    @id @default(autoincrement())
+  comment  String
+  video_id Int
+  Video    Video  @relation(fields: [video_id], references: [id])
+}
+
+model History {
+  id        Int      @id @default(autoincrement())
+  type      String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  RelatedTo RelatedTo[]
 }
 
 model Image {
   url       String   @id @unique
   altText   String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime
   width     Int?
   height    Int?
   format    String?
   size      Int?
   Video     Video?
+}
+
+model News {
+  id           Int         @id @default(autoincrement())
+  title        String
+  content      String
+  author       String?
+  url          String      @unique
+  image        String?
+  category     String?
+  language     String?
+  country      String?
+  published_at DateTime
+  newsSourceId Int
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime
+  NewsSource   NewsSource  @relation(fields: [newsSourceId], references: [id])
+  RelatedTo    RelatedTo[]
+}
+
+model NewsSource {
+  id        Int      @id @default(autoincrement())
+  source    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  News      News[]
+}
+
+model PageSettingConfig {
+  id      Int    @id @default(autoincrement())
+  type    Int    @unique
+  configs String
 }
 
 model RateLimit {
@@ -48,49 +78,6 @@ model RateLimit {
   lastReset           DateTime @default(now())
 }
 
-model RequestLog {
-  id        Int      @id @default(autoincrement())
-  source    String
-  createdAt DateTime @default(now())
-}
-
-model NewsSource {
-  id        Int      @id @default(autoincrement())
-  source    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  news      News[]
-}
-
-model News {
-  id           Int        @id @default(autoincrement())
-  title        String
-  content      String
-  author       String?
-  url          String     @unique
-  image        String?
-  category     String?
-  language     String?
-  country      String?
-  publishedAt  DateTime   @map("published_at")
-  newsSourceId Int
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  source       NewsSource @relation(fields: [newsSourceId], references: [id])
-}
-
-model Tag {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-}
-
-model CommunityComments {
-  id       Int    @id @default(autoincrement())
-  comment  String
-  video_id Int
-  Video    Video  @relation(fields: [video_id], references: [id])
-}
-
 model Report {
   id         Int    @id @default(autoincrement())
   name       String @unique
@@ -98,16 +85,44 @@ model Report {
   reportType String
 }
 
-model History {
+model RequestLog {
   id        Int      @id @default(autoincrement())
-  type      String
-  content   String
+  source    String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
-model PageSettingConfig {
-  id      Int    @id @default(autoincrement())
-  type    Int    @unique
-  configs String
+model Tag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+}
+
+model Video {
+  id                   Int                 @id @default(autoincrement())
+  bucket_file_name     String              @unique
+  ui_title             String?             @unique
+  url                  String
+  description          String
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime
+  is_verified          Boolean
+  is_reported          Boolean
+  report_type          String?
+  report_team_comments String?
+  tags                 String
+  views                Int
+  isRecommended        Boolean?
+  thumbnailUrl         String?             @unique
+  CommunityComments    CommunityComments[]
+  Image                Image?              @relation(fields: [thumbnailUrl], references: [url])
+  RelatedTo            RelatedTo[]
+}
+
+model RelatedTo {
+  id        Int     @id @default(autoincrement())
+  newsId    Int
+  videoId   Int
+  historyId Int
+  news      News    @relation(fields: [newsId], references: [id])
+  video     Video   @relation(fields: [videoId], references: [id])
+  history   History @relation(fields: [historyId], references: [id])
 }

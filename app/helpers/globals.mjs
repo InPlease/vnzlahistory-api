@@ -192,7 +192,7 @@ export const centralizeNewsProperties = (
 				category: Array.isArray(article.categories)
 					? article.categories[0]
 					: article.categories,
-				publishedAt: new Date(article.published_at || article.publishedAt),
+				publishedAt: new Date(article?.published_at || article?.publishedAt),
 				newsSourceId: sourceId,
 				language: article.locale || article.language,
 			};
