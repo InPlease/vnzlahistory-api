@@ -193,7 +193,6 @@ const main = ({ app, prisma }) => {
 						url: `${process.env.BLACKBLAZE_BASE_URL}/videos/${urlFile}`,
 						description,
 						tags: getTagsNames.join(","),
-						createdAt: new Date(),
 						is_verified: false,
 						is_reported: false,
 						views: 0,

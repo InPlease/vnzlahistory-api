@@ -157,7 +157,6 @@ export async function uploadImage(bucketId, folderPath, fileName, filePath) {
 			data: fileBuffer,
 		});
 
-		console.log("File uploaded successfully:", uploadResponse);
 		return uploadResponse;
 	} catch (error) {
 		console.error("Error uploading image:", error.message);

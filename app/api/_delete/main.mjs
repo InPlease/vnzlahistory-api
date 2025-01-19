@@ -177,5 +177,50 @@ const main = ({ app, prisma }) => {
 			});
 		}
 	});
+
+	app.delete("/search/deleteItem", async (req, res) => {
+		const host = process.env.MILLI_HOST_RAILWAY;
+		const apiKey = process.env.MILLI_HOST_RAILWAY_API_KEY;
+		const indexName = req.query.indexName;
+		const documentId = req.query.documentId;
+
+		if (!indexName) {
+			return res.status(400).json({
+				success: false,
+				message: "Index name is required",
+			});
+		}
+
+		if (!documentId) {
+			return res.status(400).json({
+				success: false,
+				message: "Document ID is required",
+			});
+		}
+
+		const client = new MeiliSearch({
+			host: host,
+			apiKey: apiKey,
+		});
+
+		const index = client.index(indexName);
+
+		try {
+			const deleteResponse = await index.deleteDocument(documentId);
+
+			res.status(200).json({
+				success: true,
+				message: `Document with ID ${documentId} has been deleted from index ${indexName}`,
+				data: deleteResponse,
+			});
+		} catch (error) {
+			console.error("Error deleting document:", error);
+			res.status(500).json({
+				success: false,
+				message: "Error deleting document",
+				error: error.message,
+			});
+		}
+	});
 };
 export default main;
